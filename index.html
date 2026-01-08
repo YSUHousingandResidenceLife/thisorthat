@@ -37,9 +37,9 @@
         .off-v .face { background-color: #111111; }
         .campus-glow .f-top { animation: districtPulse 2.5s infinite alternate; border: 4px solid var(--ysu-gold); }
         @keyframes districtPulse { from { box-shadow: 0 0 10px var(--ysu-gold); } to { box-shadow: 0 0 45px var(--ysu-gold), inset 0 0 15px #fff; } }
-        #center-ui { position: fixed; top: 80px; right: 20px; width: 300px; z-index: 100; pointer-events: auto; }
+        #center-ui { position: fixed; top: 80px; right: 20px; width: 320px; z-index: 100; pointer-events: auto; }
         .decision-card { background: #fff; border: 5px solid #000; padding: 15px; box-shadow: 8px 8px 0 var(--ysu-red); text-align: center; color: #000; }
-        .btn-action { background: #000; color: #fff; border: none; padding: 10px; margin: 6px 0; cursor: pointer; font-family: 'Bungee'; font-size: 0.7rem; width: 100%; border-radius: 4px; line-height: 1.2; transition: 0.2s; }
+        .btn-action { background: #000; color: #fff; border: none; padding: 10px; margin: 6px 0; cursor: pointer; font-family: 'Bungee'; font-size: 0.7rem; width: 100%; border-radius: 4px; line-height: 1.2; }
         .btn-action:hover { background: var(--ysu-red); }
         #player { position: absolute; width: 50px; height: 50px; background: var(--ysu-gold); border-radius: 50%; border: 4px solid #fff; z-index: 500; transition: all 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.275); display: flex; align-items: center; justify-content: center; font-size: 1.8rem; box-shadow: 0 10px 25px rgba(0,0,0,0.8); transform: translateZ(100px); }
         #results-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 4000; flex-direction: column; align-items: center; justify-content: center; color: #fff; text-align: center; padding: 20px; }
@@ -136,15 +136,15 @@
         if(race) map.addSource('race', { type:'geojson', data: race });
         if(courtyards) map.addSource('courtyards', { type:'geojson', data: courtyards });
         const colorExpr = ['match', ['get','name'], 'Lyden House', '#FF69B4', 'Cafaro House', '#0072CE', 'Wick House (Art)', '#FFFF00', 'Weller House', '#582C83', 'Kilcawley House', '#E4002B', '#E4002B'];
-        if(race) map.addLayer({ id:'race-buildings', type:'fill-extrusion', source:'race', paint:{ 'fill-extrusion-color': colorExpr, 'fill-extrusion-height': 25, 'fill-extrusion-opacity':0.95 } });
-        if(courtyards) map.addLayer({ id:'courtyards-fill3d', type:'fill-extrusion', source:'courtyards', paint:{ 'fill-extrusion-color':'#78BE20', 'fill-extrusion-height': 25, 'fill-extrusion-opacity':0.95 } });
+        if(race) map.addLayer({ id:'race-buildings', type:'fill-extrusion', source:'race', paint:{ 'fill-extrusion-color': colorExpr, 'fill-extrusion-height': 25, 'fill-extrusion-opacity': 0.95 } });
+        if(courtyards) map.addLayer({ id:'courtyards-fill3d', type:'fill-extrusion', source:'courtyards', paint:{ 'fill-extrusion-color':'#78BE20', 'fill-extrusion-height': 25, 'fill-extrusion-opacity': 0.95 } });
     });
     const questions = [
         { L: "Activities & Opportunities to Meet Students", R: "Privacy & Quiet Time" },
         { L: "Order & Eat", R: "Groceries, Cooking & Dishes" },
         { L: "Summers at Home", R: "Live Year-Round" },
         { L: "One bill per semester & financial aid", R: "Personal budget & monthly payments" },
-        { L: "24/7 staff and support", R: "Independent problem solving" },
+        { L: "24/7 access to staff and support", R: "Independent problem solving" },
         { L: "Clean my room", R: "Clean room, bathroom & kitchen" },
         { L: "Flexible contract (Abroad/Graduation)", R: "1-Year lease with sublet option" }
     ];
@@ -165,10 +165,10 @@
         if (step === 0) { side === 'L' ? (movePiece('lyden'), glowDistrict(), mapSpan('lyden')) : (movePiece('off1'), mapSpan('offcampus')); } 
         else if (step === 1) { side === 'L' ? (movePiece('kilcawley'), glowDistrict(), mapSpan('kilcawley')) : (movePiece('off2'), mapSpan('offcampus')); }
         else if (step === 2) { side === 'L' ? (movePiece('weller'), glowDistrict(), mapSpan('weller')) : (movePiece('off3'), mapSpan('offcampus')); }
-        else if (step === 3) { side === 'L' ? (movePiece('wick'), glowDistrict(), mapSpan('wick')) : (movePiece('off4'), mapSpan('offcampus')); }
+        else if (step === 3) { side === 'L' ? (movePiece('kilcawley'), glowDistrict(), mapSpan('kilcawley')) : (movePiece('off4'), mapSpan('offcampus')); }
         else if (step === 4) { side === 'L' ? (movePiece('cafaro'), glowDistrict(), mapSpan('cafaro')) : (movePiece('off5'), mapSpan('offcampus')); }
-        else if (step === 5) { side === 'L' ? (movePiece('courtyards'), glowDistrict(), mapSpan('courtyards')) : (movePiece('off6'), mapSpan('offcampus')); }
-        else if (step === 6) { movePiece('finish'); setTimeout(showResults, 3500); return; }
+        else if (step === 5) { side === 'L' ? (movePiece('wick'), glowDistrict(), mapSpan('wick')) : (movePiece('off6'), mapSpan('offcampus')); }
+        else if (step === 6) { side === 'L' ? (movePiece('courtyards'), glowDistrict(), mapSpan('courtyards')) : (movePiece('off7'), mapSpan('offcampus')); movePiece('finish'); setTimeout(showResults, 3500); return; }
         step++;
         updateQuestion();
     }
