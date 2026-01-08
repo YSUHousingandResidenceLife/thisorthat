@@ -1,224 +1,191 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<title>This or That — Housing Edition</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-
-<link href="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Bungee&display=swap" rel="stylesheet">
-
-<!-- 🔑 IMPORT MAP (REQUIRED FOR GITHUB PAGES) -->
-<script type="importmap">
-{
-  "imports": {
-    "three": "https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js",
-    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.161.0/examples/jsm/"
-  }
-}
-</script>
-
-<style>
-html,body{
-  margin:0;
-  height:100%;
-  overflow:hidden;
-  font-family:'Bungee',cursive;
-}
-#map{position:absolute;inset:0}
-
-/* HUD */
-#hud{
-  position:absolute;
-  bottom:28px;
-  left:50%;
-  transform:translateX(-50%);
-  z-index:10;
-  width:92%;
-  max-width:900px;
-}
-.title{
-  background:linear-gradient(90deg,#22c55e,#06b6d4,#a855f7);
-  color:white;
-  padding:18px;
-  border-radius:18px;
-  border:6px solid #000;
-  text-align:center;
-  font-size:1.6rem;
-  margin-bottom:14px;
-}
-.question{
-  background:#fde047;
-  border:6px solid #000;
-  border-radius:16px;
-  padding:18px;
-  text-align:center;
-  font-size:1.8rem;
-  margin-bottom:16px;
-}
-.answers{
-  display:flex;
-  gap:18px;
-}
-.answer{
-  flex:1;
-  padding:26px 20px;
-  border-radius:18px;
-  border:6px solid #000;
-  cursor:pointer;
-  text-align:center;
-  font-size:1.2rem;
-  box-shadow:0 10px 0 #000;
-  transition:.15s;
-}
-.answer.left{background:#22c55e;color:#052e16}
-.answer.right{background:#ef4444;color:#450a0a}
-.answer:hover{transform:translateY(-6px);box-shadow:0 16px 0 #000}
-.answer:active{transform:translateY(4px);box-shadow:0 6px 0 #000}
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>YSU Housing Race: Driver Reveal</title>
+  <link href="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css" rel="stylesheet" />
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Bungee&display=swap');
+    html, body { height:100%; margin:0; overflow: hidden; font-family: 'Bungee', cursive; }
+    #map { position:absolute; inset:0; }
+    #hud { position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); z-index: 100; width: 90%; max-width: 800px; }
+    .billboard { background: #E4002B; color: white; padding: 20px; border-radius: 15px; border: 5px solid white; text-align: center; font-size: 1.5rem; margin-bottom: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+    .btn-row { display: flex; gap: 15px; }
+    .choice-btn { flex: 1; padding: 25px 15px; border: 5px solid #000; border-radius: 15px; cursor: pointer; font-family: 'Bungee'; font-size: 1rem; color: white; transition: 0.2s; text-transform: uppercase; box-shadow: 0 8px 0 #000; }
+    .red-btn { background: #E4002B; }
+    .black-btn { background: #111; }
+    .choice-btn:hover { transform: translateY(-5px); box-shadow: 0 13px 0 #000; filter: brightness(1.2); }
+    
+    /* Result Pop-up */
+    #results { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 1000; flex-direction: column; align-items: center; justify-content: center; text-align: center; color: white; }
+    .result-card { background: white; color: black; padding: 30px; border-radius: 30px; border: 8px solid #E4002B; max-width: 550px; }
+    .character-avatar { font-size: 5rem; margin-bottom: 10px; }
+  </style>
 </head>
-
 <body>
 
 <div id="map"></div>
 
 <div id="hud">
-  <div class="title">THIS OR THAT — HOUSING EDITION</div>
-  <div class="question" id="qText"></div>
-  <div class="answers">
-    <div class="answer left" id="aLeft"></div>
-    <div class="answer right" id="aRight"></div>
+  <div class="billboard" id="q-box">YSU HOUSING RACE</div>
+  <div class="btn-row">
+    <button id="btn-l" class="choice-btn red-btn" onclick="handleSelect('left')"></button>
+    <button id="btn-r" class="choice-btn black-btn" onclick="handleSelect('right')"></button>
   </div>
 </div>
 
+<div id="results">
+  <div class="result-card">
+    <div class="character-avatar" id="char-icon">🚗</div>
+    <h1 id="res-title" style="margin: 0 0 10px 0;">DRIVER REVEALED!</h1>
+    <h2 id="char-name" style="color: #E4002B; margin-bottom: 5px;"></h2>
+    <p id="res-body" style="font-size: 1.1rem; line-height: 1.4;"></p>
+    <p style="font-weight: bold; color: #555;">Based on your driving style, a Residence Hall/Apartment is suited for you.</p>
+    <button onclick="location.reload()" style="padding:15px 30px; font-family:'Bungee'; background:#111; color:white; border:none; border-radius:10px; cursor:pointer; margin-top: 15px;">DRIVE AGAIN</button>
+  </div>
+</div>
+
+<script src="https://unpkg.com/three@0.147.0/build/three.min.js"></script>
+<script src="https://unpkg.com/three@0.147.0/examples/js/loaders/GLTFLoader.js"></script>
 <script src="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.js"></script>
 
-<script type="module">
-/* ================= IMPORTS ================= */
-import * as THREE from "three";
-import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+<script>
+  const questions = [
+    { q: "HOUSING VIBE?", l: "Activities & Social", r: "Privacy & Quiet", loc: [-80.6482, 41.1025] },
+    { q: "SOCIAL STYLE?", l: "Meet Students", r: "Keep to Myself", loc: [-80.6485, 41.1035] },
+    { q: "DINING?", l: "Order & Eat", r: "Grocery & Cooking", loc: [-80.6490, 41.1045] },
+    { q: "RESIDENCY?", l: "Summers at Home", r: "Live Year-Round", loc: [-80.6500, 41.1060] },
+    { q: "FINANCES?", l: "One Bill / Aid", r: "Monthly Budget", loc: [-80.6515, 41.1075] },
+    { q: "SUPPORT?", l: "24/7 Staff Support", r: "Indie Problem Solving", loc: [-80.6505, 41.1090] },
+    { q: "CLEANING?", l: "Clean My Room", r: "Room, Bath & Living", loc: [-80.6480, 41.1085] },
+    { q: "CONTRACT?", l: "Flexible Study", r: "1-Year Lease", loc: [-80.6465, 41.1072] }
+  ];
 
-/* ================= QUESTIONS ================= */
-const questions = [
-  { q:"HOUSING VIBE?", l:"Activities & Social", r:"Privacy & Quiet", loc:[-80.6482,41.1025] },
-  { q:"SOCIAL STYLE?", l:"Meet Students", r:"Keep to Myself", loc:[-80.6485,41.1035] },
-  { q:"DINING?", l:"Order & Eat", r:"Grocery & Cooking", loc:[-80.6490,41.1045] },
-  { q:"RESIDENCY?", l:"Summers at Home", r:"Live Year-Round", loc:[-80.6500,41.1060] },
-  { q:"FINANCES?", l:"One Bill / Aid", r:"Monthly Budget", loc:[-80.6515,41.1075] },
-  { q:"SUPPORT?", l:"24/7 Staff Support", r:"Indie Problem Solving", loc:[-80.6505,41.1090] },
-  { q:"CLEANING?", l:"Clean My Room", r:"Room, Bath & Living", loc:[-80.6480,41.1085] },
-  { q:"CONTRACT?", l:"Flexible Study", r:"1-Year Lease", loc:[-80.6465,41.1072] }
-];
+  let step = 0;
+  let scoreLeft = 0;
+  let nextIsRed = true;
+  const bricks = [];
+  let carModel;
 
-let qIndex = 0;
-
-/* ================= MAP ================= */
-mapboxgl.accessToken =
-'pk.eyJ1IjoieXN1LWhybCIsImEiOiJjbWZtcjVkNXUwNTJkMmxvaDZpaTF6b2x2In0.8-4W7BoAy5GmwM2_-L_Jzw';
-
-const map = new mapboxgl.Map({
-  container:'map',
-  style:'mapbox://styles/ysu-hrl/cmfpr50qm00a401ry0uzb5b1q',
-  center:questions[0].loc,
-  zoom:16.8,
-  pitch:60,
-  bearing:-133.6
-});
-
-/* ================= RAINBOW BUILDINGS (SAFE) ================= */
-map.on('load',()=>{
-  const layers = map.getStyle().layers;
-  layers.forEach(layer=>{
-    if(layer.type === 'fill-extrusion'){
-      map.setPaintProperty(layer.id,'fill-extrusion-color',[
-        'rgba',
-        ['random',['get','name'],0],
-        ['random',['get','name'],1],
-        ['random',['get','name'],2],
-        1
-      ]);
-    }
+  mapboxgl.accessToken = 'pk.eyJ1IjoieXN1LWhybCIsImEiOiJjbWZtcjVkNXUwNTJkMmxvaDZpaTF6b2x2In0.8-4W7BoAy5GmwM2_-L_Jzw';
+  const map = new mapboxgl.Map({
+    container: 'map',
+    style: 'mapbox://styles/ysu-hrl/cmfpr50qm00a401ry0uzb5b1q',
+    center: [-80.6482, 41.1025],
+    zoom: 18.5,
+    pitch: 65,
+    bearing: -133.6,
+    interactive: true 
   });
-});
 
-/* ================= THREE CUSTOM LAYER ================= */
-const scene = new THREE.Scene();
-const camera = new THREE.Camera();
-const renderer = new THREE.WebGLRenderer({alpha:true});
-renderer.autoClear = false;
+  // 3D Custom Layer logic
+  const customLayer = {
+    id: '3d-model',
+    type: 'custom',
+    renderingMode: '3d',
+    onAdd: function (map, gl) {
+      this.camera = new THREE.Camera();
+      this.scene = new THREE.Scene();
+      const light = new THREE.DirectionalLight(0xffffff);
+      light.position.set(0, -70, 100).normalize();
+      this.scene.add(light);
+      this.scene.add(new THREE.AmbientLight(0x404040, 2));
 
-const loader = new GLTFLoader();
+      const loader = new THREE.GLTFLoader();
+      // USING RAW GITHUB URL FOR PROPER LOADING
+      const url = 'https://raw.githubusercontent.com/YSUHousingandResidenceLife/thisorthat/main/Car.glb';
+      loader.load(url, (gltf) => {
+        carModel = gltf.scene;
+        this.scene.add(carModel);
+      });
+      this.renderer = new THREE.WebGLRenderer({ canvas: map.getCanvas(), context: gl, antialias: true });
+      this.renderer.autoClear = false;
+    },
+    render: function (gl, matrix) {
+      const modelOrigin = map.getCenter().toArray();
+      const modelAsPoint = mapboxgl.MercatorCoordinate.fromLngLat(modelOrigin, 0);
+      
+      const m = new THREE.Matrix4().fromArray(matrix);
+      const l = new THREE.Matrix4()
+        .makeTranslation(modelAsPoint.x, modelAsPoint.y, modelAsPoint.z)
+        .scale(new THREE.Vector3(modelAsPoint.meterInMercatorCoordinateUnits(), -modelAsPoint.meterInMercatorCoordinateUnits(), modelAsPoint.meterInMercatorCoordinateUnits()))
+        .multiply(new THREE.Matrix4().makeRotationX(Math.PI / 2));
 
-const customLayer = {
-  id:'three-layer',
-  type:'custom',
-  renderingMode:'3d',
-  onAdd(map,gl){
-    renderer.setSize(map.getCanvas().width,map.getCanvas().height);
-    renderer.setPixelRatio(window.devicePixelRatio);
-    map.getCanvasContainer().appendChild(renderer.domElement);
+      this.camera.projectionMatrix = m.multiply(l);
+      this.renderer.resetState();
+      this.renderer.render(this.scene, this.camera);
+      map.triggerRepaint();
+    }
+  };
 
-    scene.add(new THREE.AmbientLight(0xffffff,1.2));
-  },
-  render(gl,matrix){
-    camera.projectionMatrix = new THREE.Matrix4().fromArray(matrix);
-    renderer.resetState();
-    renderer.render(scene,camera);
-    map.triggerRepaint();
-  }
-};
+  map.on('load', () => {
+    map.addLayer(customLayer);
+    map.addSource('bricks', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+    map.addLayer({
+      id: 'bricks-layer', type: 'fill', source: 'bricks',
+      paint: { 'fill-color': ['get', 'color'], 'fill-opacity': 1, 'fill-outline-color': '#fff' }
+    });
+    updateGame();
+  });
 
-map.on('load',()=>map.addLayer(customLayer));
+  function handleSelect(side) {
+    if (side === 'left') scoreLeft++;
+    const lngLat = map.getCenter();
+    const color = nextIsRed ? '#E4002B' : '#111111';
+    nextIsRed = !nextIsRed;
 
-/* ================= HELPERS ================= */
-function lngLatToVector(lng,lat,height=0){
-  const m = mapboxgl.MercatorCoordinate.fromLngLat({lng,lat},height);
-  return new THREE.Vector3(m.x,m.y,m.z);
-}
-
-function dropTrafficLight([lng,lat],side){
-  loader.load('./california_traffic_signal_median.glb',g=>{
-    const obj = g.scene;
-    obj.scale.setScalar(0.8);
-
-    obj.traverse(m=>{
-      if(m.isMesh){
-        m.material = m.material.clone();
-        m.material.color.set(side==='left'?0x22c55e:0xef4444);
+    const sizeLng = 0.00007; const sizeLat = 0.000013;
+    bricks.push({
+      type: 'Feature',
+      properties: { color: color },
+      geometry: {
+        type: 'Polygon',
+        coordinates: [[
+          [lngLat.lng - sizeLng, lngLat.lat - sizeLat],
+          [lngLat.lng + sizeLng, lngLat.lat - sizeLat],
+          [lngLat.lng + sizeLng, lngLat.lat + sizeLat],
+          [lngLat.lng - sizeLng, lngLat.lat + sizeLat],
+          [lngLat.lng - sizeLng, lngLat.lat - sizeLat]
+        ]]
       }
     });
+    map.getSource('bricks').setData({ type: 'FeatureCollection', features: bricks });
 
-    obj.position.copy(lngLatToVector(lng,lat,0));
-    scene.add(obj);
-  });
-}
-
-/* ================= GAME ================= */
-function renderQuestion(){
-  const q = questions[qIndex];
-  if(!q){
-    qText.innerText='DONE';
-    document.querySelector('.answers').style.display='none';
-    return;
+    step++;
+    if (step < questions.length) {
+      updateGame();
+      map.flyTo({ center: questions[step].loc, speed: 0.6, curve: 1 });
+    } else {
+      showResults();
+    }
   }
-  qText.innerText = q.q;
-  aLeft.innerText = q.l;
-  aRight.innerText = q.r;
-  map.flyTo({center:q.loc,speed:0.9,curve:1.2});
-}
 
-function choose(side){
-  const q = questions[qIndex];
-  dropTrafficLight(q.loc,side);
-  qIndex++;
-  renderQuestion();
-}
+  function updateGame() {
+    const d = questions[step];
+    document.getElementById('q-box').innerText = d.q;
+    document.getElementById('btn-l').innerText = d.l;
+    document.getElementById('btn-r').innerText = d.r;
+  }
 
-aLeft.onclick = ()=>choose('left');
-aRight.onclick = ()=>choose('right');
+  function showResults() {
+    document.getElementById('hud').style.display = 'none';
+    const res = document.getElementById('results');
+    const charName = document.getElementById('char-name');
+    const charIcon = document.getElementById('char-icon');
+    const body = document.getElementById('res-body');
 
-map.on('load',renderQuestion);
+    if (scoreLeft >= 5) {
+      charName.innerText = "THE SOCIAL NAVIGATOR";
+      charIcon.innerText = "🚌";
+      body.innerText = "You were driving the Social Navigator! You thrive in the heart of campus, seeking out connections and activities.";
+    } else {
+      charName.innerText = "THE INDEPENDENT EXPLORER";
+      charIcon.innerText = "🏎️";
+      body.innerText = "You were driving the Independent Explorer! You value your own lane, quiet study spots, and a space to call your own.";
+    }
+    res.style.display = 'flex';
+  }
 </script>
-
 </body>
 </html>
