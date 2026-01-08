@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YSU Housing Tycoon: Precision Final</title>
+    <title>YSU Housing Tycoon: Final Polish</title>
     <link href="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css" rel="stylesheet" />
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Bungee&display=swap');
@@ -39,13 +39,22 @@
         .court-v .face { background-color: #78BE20; }
         .off-v .face { background-color: #111111; }
         .corner-v .face { background-color: #111111; border: 2px solid #fff; }
-        .campus-glow .f-top { box-shadow: 0 0 50px var(--ysu-gold), inset 0 0 25px #fff; border: 4px solid var(--ysu-gold); }
+
+        /* Slow District Glow Pulse */
+        .campus-glow .f-top { 
+            animation: districtPulse 2.5s infinite alternate;
+            border: 4px solid var(--ysu-gold); 
+        }
+        @keyframes districtPulse {
+            from { box-shadow: 0 0 10px var(--ysu-gold); }
+            to { box-shadow: 0 0 45px var(--ysu-gold), inset 0 0 15px #fff; }
+        }
 
         #center-ui { position: fixed; top: 80px; right: 20px; width: 280px; z-index: 100; pointer-events: auto; }
         .decision-card { background: #fff; border: 5px solid #000; padding: 15px; box-shadow: 8px 8px 0 var(--ysu-red); text-align: center; color: #000; }
-        .btn-action { background: #000; color: #fff; border: none; padding: 12px; margin: 6px 0; cursor: pointer; font-family: 'Bungee'; font-size: 0.8rem; width: 100%; border-radius: 4px; }
+        .btn-action { background: #000; color: #fff; border: none; padding: 12px; margin: 8px 0; cursor: pointer; font-family: 'Bungee'; font-size: 0.8rem; width: 100%; border-radius: 4px; }
         
-        #player { position: absolute; width: 50px; height: 50px; background: var(--ysu-gold); border-radius: 50%; border: 4px solid #fff; z-index: 500; transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); display: flex; align-items: center; justify-content: center; font-size: 1.8rem; box-shadow: 0 10px 25px rgba(0,0,0,0.8); transform: translateZ(100px); }
+        #player { position: absolute; width: 50px; height: 50px; background: var(--ysu-gold); border-radius: 50%; border: 4px solid #fff; z-index: 500; transition: all 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.275); display: flex; align-items: center; justify-content: center; font-size: 1.8rem; box-shadow: 0 10px 25px rgba(0,0,0,0.8); transform: translateZ(100px); }
         #results-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 4000; flex-direction: column; align-items: center; justify-content: center; color: #fff; text-align: center; padding: 20px; }
         .match-text { color: var(--ysu-red); font-weight: 900; font-size: 2.2rem; text-transform: uppercase; margin-top: 15px; }
     </style>
@@ -79,15 +88,18 @@
         <div class="prism-wrap lyden-v campus" id="lyden"><div class="face f-top">LYDEN</div><div class="face f-front"></div><div class="face f-right"></div></div>
         <div class="prism-wrap cafaro-v campus" id="cafaro"><div class="face f-top">CAFARO</div><div class="face f-front"></div><div class="face f-right"></div></div>
         <div class="prism-wrap wick-v campus" id="wick"><div class="face f-top">WICK</div><div class="face f-front"></div><div class="face f-right"></div></div>
-        <div class="prism-wrap corner-v" id="parking"><div class="face f-top">PARKING</div><div class="face f-front"></div><div class="face f-right"></div></div>
+        <div class="prism-wrap corner-v" id="wifi"><div class="face f-top">WIFI</div><div class="face f-front"></div><div class="face f-right"></div></div>
+        
         <div class="prism-wrap weller-v campus" id="weller" style="grid-row:2; grid-column:5"><div class="face f-top">WELLER</div><div class="face f-front"></div><div class="face f-right"></div></div>
         <div class="prism-wrap kil-v campus" id="kilcawley" style="grid-row:3; grid-column:5"><div class="face f-top">KILCAWLEY</div><div class="face f-front"></div><div class="face f-right"></div></div>
         <div class="prism-wrap court-v campus" id="courtyards" style="grid-row:4; grid-column:5"><div class="face f-top">COURTYARDS</div><div class="face f-front"></div><div class="face f-right"></div></div>
         <div class="prism-wrap corner-v" id="finish" style="grid-row:5; grid-column:5"><div class="face f-top">FINISH</div><div class="face f-front"></div><div class="face f-right"></div></div>
+        
         <div class="prism-wrap off-v" id="off1" style="grid-row:5; grid-column:4"><div class="face f-top">OFF-CAMPUS</div><div class="face f-front"></div><div class="face f-right"></div></div>
         <div class="prism-wrap off-v" id="off2" style="grid-row:5; grid-column:3"><div class="face f-top">OFF-CAMPUS</div><div class="face f-front"></div><div class="face f-right"></div></div>
         <div class="prism-wrap off-v" id="off3" style="grid-row:5; grid-column:2"><div class="face f-top">OFF-CAMPUS</div><div class="face f-front"></div><div class="face f-right"></div></div>
         <div class="prism-wrap off-v" id="off4" style="grid-row:5; grid-column:1"><div class="face f-top">OFF-CAMPUS</div><div class="face f-front"></div><div class="face f-right"></div></div>
+        
         <div class="prism-wrap off-v" id="off5" style="grid-row:4; grid-column:1"><div class="face f-top">OFF-CAMPUS</div><div class="face f-front"></div><div class="face f-right"></div></div>
         <div class="prism-wrap off-v" id="off6" style="grid-row:3; grid-column:1"><div class="face f-top">OFF-CAMPUS</div><div class="face f-front"></div><div class="face f-right"></div></div>
         <div class="prism-wrap off-v" id="off7" style="grid-row:2; grid-column:1"><div class="face f-top">OFF-CAMPUS</div><div class="face f-front"></div><div class="face f-right"></div></div>
@@ -115,7 +127,6 @@
 
 <script src="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.js"></script>
 <script>
-    // PRECISION COORDINATES AS PROVIDED
     const bldgCoords = {
         lyden: {center: [-80.64767, 41.11038], zoom: 17.1, pitch: 40, bearing: 145},
         kilcawley: {center: [-80.64747, 41.10671], zoom: 16.9, pitch: 40, bearing: -133},
@@ -127,7 +138,6 @@
         neutral: {center: [-80.64692, 41.10676], zoom: 16.0, pitch: 40, bearing: -133}
     };
 
-    // DEBUG CONSOLE: PRESS 'L' TO CAPTURE COORDINATES
     window.addEventListener('keydown', (e) => {
         if (e.key.toLowerCase() === 'l') {
             const c = map.getCenter();
@@ -182,24 +192,31 @@
 
     let step = 0; let scoreL = 0;
     const player = document.getElementById('player');
+    const campusUnits = document.querySelectorAll('.campus');
 
     function mapSpan(loc) {
-        map.flyTo({ ...bldgCoords[loc], speed: 0.65 });
+        map.flyTo({ ...bldgCoords[loc], speed: 0.6 });
     }
 
     function handleChoice(side) {
         document.querySelectorAll('.prism-wrap').forEach(s => s.classList.remove('campus-glow'));
         if(side === 'L') scoreL++;
         
-        // Dynamic path featuring unique building views
-        if (step === 0) { side === 'L' ? (movePiece('lyden'), glow('lyden'), mapSpan('lyden')) : (movePiece('off1'), mapSpan('offcampus')); } 
-        else if (step === 1) { side === 'L' ? (movePiece('kilcawley'), glow('kilcawley'), mapSpan('kilcawley')) : (movePiece('off2'), mapSpan('offcampus')); }
-        else if (step === 2) { side === 'L' ? (movePiece('weller'), glow('weller'), mapSpan('weller')) : (movePiece('off3'), mapSpan('offcampus')); }
-        else if (step === 3) { side === 'L' ? (movePiece('wick'), glow('wick'), mapSpan('wick')) : (movePiece('off4'), mapSpan('offcampus')); }
-        else if (step === 4) { side === 'L' ? (movePiece('cafaro'), glow('cafaro'), mapSpan('cafaro')) : (movePiece('off5'), mapSpan('offcampus')); }
-        else if (step === 5) { side === 'L' ? (movePiece('courtyards'), glow('courtyards'), mapSpan('courtyards')) : (movePiece('off6'), mapSpan('offcampus')); }
+        // Featured District Flow
+        if (step === 0) { side === 'L' ? (movePiece('lyden'), glowDistrict(), mapSpan('lyden')) : (movePiece('off1'), mapSpan('offcampus')); } 
+        else if (step === 1) { side === 'L' ? (movePiece('kilcawley'), glowDistrict(), mapSpan('kilcawley')) : (movePiece('off2'), mapSpan('offcampus')); }
+        else if (step === 2) { side === 'L' ? (movePiece('weller'), glowDistrict(), mapSpan('weller')) : (movePiece('off3'), mapSpan('offcampus')); }
+        else if (step === 3) { side === 'L' ? (movePiece('wick'), glowDistrict(), mapSpan('wick')) : (movePiece('off4'), mapSpan('offcampus')); }
+        else if (step === 4) { side === 'L' ? (movePiece('cafaro'), glowDistrict(), mapSpan('cafaro')) : (movePiece('off5'), mapSpan('offcampus')); }
+        else if (step === 5) { side === 'L' ? (movePiece('courtyards'), glowDistrict(), mapSpan('courtyards')) : (movePiece('off6'), mapSpan('offcampus')); }
         
-        if (step >= 5) { movePiece('finish'); setTimeout(showResults, 1000); return; }
+        if (step >= 5) { 
+            movePiece('finish'); 
+            // DELAY RESULT BY 3.5 SECONDS TO SEE MAP MOVE
+            setTimeout(showResults, 3500); 
+            return; 
+        }
+        
         step++;
         document.getElementById('q-text').innerText = questions[step].q;
         document.querySelectorAll('.btn-action')[0].innerText = questions[step].L;
@@ -212,7 +229,7 @@
         player.style.top = t.offsetTop + (t.offsetHeight/2 - 25) + "px";
     }
 
-    function glow(id) { document.getElementById(id).classList.add('campus-glow'); }
+    function glowDistrict() { campusUnits.forEach(u => u.classList.add('campus-glow')); }
 
     function showResults() {
         document.getElementById('results-overlay').style.display = 'flex';
@@ -223,7 +240,7 @@
             pIcon.innerText = "⚾"; pName.innerText = "STEVE HARRINGTON (Stranger Things)";
             hFinal.innerText = "MATCH: YSU RESIDENCE HALLS";
         } else {
-            pIcon.innerText = "🎻"; pName.innerText = "WEDNESDAY ADDAMS (Wednesday)";
+            pIcon.innerText = "🕷️"; pName.innerText = "WEDNESDAY ADDAMS (Wednesday)";
             hFinal.innerText = "MATCH: OFF-CAMPUS LIVING";
         }
     }
