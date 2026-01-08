@@ -7,49 +7,46 @@
     <link href="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css" rel="stylesheet" />
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Bungee&display=swap');
-        :root { --ysu-red: #E4002B; --ysu-gold: #FFD700; --prism-h: 50px; }
+        :root { --ysu-red: #E4002B; --ysu-gold: #FFD700; --prism-h: 35px; }
         
         body, html { margin: 0; padding: 0; height: 100%; font-family: 'Bungee', cursive; overflow: hidden; background: #000; touch-action: manipulation; }
         #map { position: absolute; inset: 0; z-index: 1; }
         
         #top-banner { 
             position: fixed; top: 0; left: 0; width: 100%; background: var(--ysu-red); 
-            color: white; text-align: center; padding: 10px 0; z-index: 2000; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5); border-bottom: 4px solid white; 
-            font-size: 1rem; 
+            color: white; text-align: center; padding: 8px 0; z-index: 2000; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5); border-bottom: 3px solid white; 
+            font-size: 0.9rem; 
         }
         
-        /* Intro Overlay Mobile Fix */
-        #intro-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 3000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
-        #countdown-timer { color: white; font-size: 3rem; margin-bottom: 10px; text-shadow: 0 0 20px var(--ysu-red); }
+        /* Intro Overlay */
+        #intro-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 3000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px; }
+        #countdown-timer { color: white; font-size: 2.5rem; margin-bottom: 5px; text-shadow: 0 0 15px var(--ysu-red); }
         
-        .deck { position: relative; width: 100%; max-width: 500px; height: 350px; display: flex; justify-content: center; align-items: center; gap: 10px; }
+        .deck { position: relative; width: 100%; height: 300px; display: flex; justify-content: center; align-items: center; gap: 8px; }
         .intro-card { 
-            width: 45%; height: 300px; background: #fff; border: 4px solid #000; border-radius: 15px; 
+            width: 46%; height: 260px; background: #fff; border: 4px solid #000; border-radius: 12px; 
             display: flex; flex-direction: column; align-items: center; justify-content: center; 
-            box-shadow: 0 10px 20px rgba(0,0,0,0.5); padding: 10px; text-align: center; 
-            transition: all 1.2s cubic-bezier(0.4, 0, 0.2, 1); font-size: 0.7rem;
+            padding: 8px; text-align: center; font-size: 0.6rem;
         }
-        .intro-card h2 { font-size: 0.9rem; margin: 5px 0; }
-        .intro-card span { font-size: 2.5rem !important; }
+        .intro-card h2 { font-size: 0.8rem; margin: 3px 0; }
+        .intro-card span { font-size: 2rem !important; }
 
-        .card-1 { transform: rotate(-5deg); border-color: var(--ysu-red); }
-        .card-2 { transform: rotate(5deg); border-color: #000; }
+        /* Game Board Scaling */
+        #game-overlay { position: absolute; inset: 0; z-index: 10; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; pointer-events: none; padding-top: 60px; }
         
-        /* Game UI */
-        #game-overlay { position: absolute; inset: 0; z-index: 10; display: flex; align-items: center; justify-content: center; pointer-events: none; perspective: 2000px; }
-        
-        /* Responsive Board */
         #board { 
-            width: 95vmin; height: 95vmin; display: grid; 
-            grid-template-columns: repeat(5, 1fr); grid-template-rows: repeat(5, 1fr); 
-            gap: 8px; position: relative; pointer-events: auto; 
-            transform: rotateX(20deg); transform-style: preserve-3d; 
+            width: 90vw; height: 90vw; 
+            max-width: 450px; max-height: 450px;
+            display: grid; grid-template-columns: repeat(5, 1fr); grid-template-rows: repeat(5, 1fr); 
+            gap: 6px; position: relative; pointer-events: auto; 
+            transform: rotateX(15deg); transform-style: preserve-3d; 
+            margin-top: 10px;
         }
 
-        .prism-wrap { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; transition: transform 0.4s ease; }
-        .face { position: absolute; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 0.5rem; color: #fff; text-transform: uppercase; border: 1px solid rgba(255,255,255,0.4); backface-visibility: hidden; }
-        .f-top { width: 100%; height: 100%; transform: translateZ(var(--prism-h)); background: rgba(255,255,255,0.1); backdrop-filter: blur(4px); }
+        .prism-wrap { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; }
+        .face { position: absolute; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 0.45rem; color: #fff; text-transform: uppercase; border: 1px solid rgba(255,255,255,0.3); backface-visibility: hidden; }
+        .f-top { width: 100%; height: 100%; transform: translateZ(var(--prism-h)); background: rgba(255,255,255,0.1); backdrop-filter: blur(2px); }
         .f-front { width: 100%; height: var(--prism-h); bottom: 0; left: 0; transform-origin: bottom; transform: rotateX(-90deg); filter: brightness(0.6); }
         .f-right { width: var(--prism-h); height: 100%; top: 0; right: 0; transform-origin: right; transform: rotateY(90deg); filter: brightness(0.4); }
 
@@ -63,40 +60,32 @@
         .off-v .face { background-color: #111111; }
         .corner-v .face { background-color: #111111; border: 2px solid #fff; }
 
-        /* Mobile Decision Card - Moved to Bottom */
+        /* Decision Card Positioning */
         #center-ui { 
-            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); 
-            width: 90%; max-width: 400px; z-index: 100; pointer-events: auto; 
+            position: fixed; bottom: 15px; left: 50%; transform: translateX(-50%); 
+            width: 92%; max-width: 380px; z-index: 100; pointer-events: auto; 
         }
-        .decision-card { background: #fff; border: 4px solid #000; padding: 15px; box-shadow: 6px 6px 0 var(--ysu-red); text-align: center; color: #000; }
-        #q-text { font-size: 0.9rem; margin-bottom: 15px; line-height: 1.2; }
-        .btn-action { background: #000; color: #fff; border: none; padding: 15px 10px; margin: 5px 0; cursor: pointer; font-family: 'Bungee'; font-size: 0.75rem; width: 100%; border-radius: 6px; line-height: 1.2; }
+        .decision-card { background: #fff; border: 4px solid #000; padding: 12px; box-shadow: 5px 5px 0 var(--ysu-red); text-align: center; color: #000; }
+        #q-text { font-size: 0.85rem; margin-bottom: 10px; line-height: 1.1; }
+        .btn-action { background: #000; color: #fff; border: none; padding: 14px 8px; margin: 4px 0; cursor: pointer; font-family: 'Bungee'; font-size: 0.7rem; width: 100%; border-radius: 5px; line-height: 1.1; }
         
-        /* Player Piece Scaling */
-        #player { position: absolute; width: 40px; height: 40px; background: var(--ysu-gold); border-radius: 50%; border: 3px solid #fff; z-index: 500; transition: all 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.275); display: flex; align-items: center; justify-content: center; font-size: 1.4rem; box-shadow: 0 10px 25px rgba(0,0,0,0.8); transform: translateZ(100px); }
+        #player { position: absolute; width: 35px; height: 35px; background: var(--ysu-gold); border-radius: 50%; border: 3px solid #fff; z-index: 500; transition: all 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.275); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; transform: translateZ(60px); }
 
-        /* Result Overlay Mobile */
-        #results-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 4000; flex-direction: column; align-items: center; justify-content: center; color: #fff; text-align: center; padding: 15px; }
-        .result-box { background: #fff; color: #000; padding: 25px; border: 8px solid #000; width: 90%; max-width: 450px; border-radius: 20px; max-height: 85vh; overflow-y: auto; }
-        .match-text { color: var(--ysu-red); font-weight: 900; font-size: 1.5rem; text-transform: uppercase; margin-top: 15px; }
-        .final-link { display: block; margin: 15px 0; color: var(--ysu-red); text-decoration: underline; font-size: 0.9rem; font-weight: bold; }
+        #results-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 4000; flex-direction: column; align-items: center; justify-content: center; padding: 10px; }
+        .result-box { background: #fff; color: #000; padding: 20px; border: 6px solid #000; width: 85%; max-width: 400px; border-radius: 15px; max-height: 90vh; overflow-y: auto; text-align: center; }
+        .match-text { color: var(--ysu-red); font-weight: 900; font-size: 1.3rem; margin-top: 10px; }
+        .final-link { display: block; margin: 12px 0; color: var(--ysu-red); text-decoration: underline; font-size: 0.85rem; font-weight: bold; }
 
-        /* Animation Keyframes */
-        .shuffle-anim .card-1 { animation: flyAwayLeft 1.5s forwards; }
-        .shuffle-anim .card-2 { animation: flyAwayRight 1.5s forwards; }
-        @keyframes flyAwayLeft { 0% { transform: rotate(-5deg) translateX(0); opacity: 1; } 100% { transform: rotate(-20deg) translateX(-1000px); opacity: 0; } }
-        @keyframes flyAwayRight { 0% { transform: rotate(5deg) translateX(0); opacity: 1; } 100% { transform: rotate(20deg) translateX(1000px); opacity: 0; } }
-        @keyframes districtPulse { from { box-shadow: 0 0 5px var(--ysu-gold); } to { box-shadow: 0 0 25px var(--ysu-gold); } }
+        @keyframes flyAwayLeft { 0% { transform: rotate(-5deg) translateX(0); opacity: 1; } 100% { transform: rotate(-20deg) translateX(-800px); opacity: 0; } }
+        @keyframes flyAwayRight { 0% { transform: rotate(5deg) translateX(0); opacity: 1; } 100% { transform: rotate(20deg) translateX(800px); opacity: 0; } }
 
-        /* Desktop Adjustments */
         @media (min-width: 768px) {
-            #top-banner { font-size: 1.3rem; padding: 12px 0; }
+            #board { width: 80vmin; height: 80vmin; max-width: none; max-height: none; transform: rotateX(20deg); }
             #center-ui { top: 100px; right: 25px; bottom: auto; left: auto; transform: none; width: 350px; }
             #q-text { font-size: 1.1rem; }
-            .btn-action { font-size: 0.85rem; }
-            .face { font-size: 0.65rem; }
-            #player { width: 50px; height: 50px; font-size: 1.8rem; }
-            .match-text { font-size: 2.2rem; }
+            .btn-action { font-size: 0.85rem; padding: 18px 12px; }
+            .result-box { padding: 30px; }
+            .match-text { font-size: 2rem; }
         }
     </style>
 </head>
@@ -110,12 +99,12 @@
         <div class="intro-card card-1">
             <h2 style="color:var(--ysu-red)">TEAM PLAYER?</h2>
             <p>Are you the<br><strong>SOCIAL NAVIGATOR?</strong></p>
-            <span style="font-size: 3.5rem;">⚾</span>
+            <span>⚾</span>
         </div>
         <div class="intro-card card-2">
             <h2>LONE WOLF?</h2>
             <p>Or the<br><strong>INDEPENDENT SOUL?</strong></p>
-            <span style="font-size: 3.5rem;">🕷️</span>
+            <span>🕷️</span>
         </div>
     </div>
 </div>
@@ -154,13 +143,13 @@
 
 <div id="results-overlay">
     <div class="result-box">
-        <div id="p-icon" style="font-size: 4rem;"></div>
-        <h1 id="p-name" style="margin:10px 0; font-size: 1.3rem;"></h1>
-        <p id="res-body" style="font-size:0.9rem; line-height:1.4; color: #222; text-align: left;"></p>
+        <div id="p-icon" style="font-size: 3rem;"></div>
+        <h1 id="p-name" style="margin:5px 0; font-size: 1.2rem;"></h1>
+        <p id="res-body" style="font-size:0.85rem; line-height:1.3; color: #222; text-align: left;"></p>
         <hr>
         <p class="match-text" id="housing-final"></p>
         <div id="link-area"></div>
-        <button onclick="location.reload()" style="padding:15px 30px; font-family:'Bungee'; background:#000; color:#fff; border:none; cursor:pointer; width:100%; margin-top: 15px; border-radius: 8px;">RESTART</button>
+        <button onclick="location.reload()" style="padding:12px 25px; font-family:'Bungee'; background:#000; color:#fff; border:none; border-radius: 6px; margin-top: 10px;">RESTART</button>
     </div>
 </div>
 
@@ -184,8 +173,10 @@
         if (timeLeft <= 0) {
             clearInterval(interval);
             document.getElementById('countdown-timer').style.display = 'none';
-            document.getElementById('deck-container').classList.add('shuffle-anim');
-            setTimeout(() => { document.getElementById('intro-overlay').style.display = 'none'; }, 2000);
+            document.querySelector('.deck').style.animation = 'none';
+            document.querySelector('.card-1').style.animation = 'flyAwayLeft 1.5s forwards';
+            document.querySelector('.card-2').style.animation = 'flyAwayRight 1.5s forwards';
+            setTimeout(() => { document.getElementById('intro-overlay').style.display = 'none'; }, 1500);
         }
     }, 1000);
 
@@ -226,19 +217,17 @@
     updateQuestion();
 
     function mapSpan(loc) { map.flyTo({ ...bldgCoords[loc], speed: 0.6 }); }
-    function glowDistrict() { campusUnits.forEach(u => u.classList.add('campus-glow')); }
 
     function handleChoice(side) {
-        document.querySelectorAll('.prism-wrap').forEach(s => s.classList.remove('campus-glow'));
         if(side === 'L') scoreL++;
         
-        if (step === 0) { side === 'L' ? (movePiece('lyden'), glowDistrict(), mapSpan('lyden')) : (movePiece('off1'), mapSpan('offcampus')); } 
-        else if (step === 1) { side === 'L' ? (movePiece('kilcawley'), glowDistrict(), mapSpan('kilcawley')) : (movePiece('off2'), mapSpan('offcampus')); }
-        else if (step === 2) { side === 'L' ? (movePiece('weller'), glowDistrict(), mapSpan('weller')) : (movePiece('off3'), mapSpan('offcampus')); }
-        else if (step === 3) { side === 'L' ? (movePiece('kilcawley'), glowDistrict(), mapSpan('kilcawley')) : (movePiece('off4'), mapSpan('offcampus')); }
-        else if (step === 4) { side === 'L' ? (movePiece('cafaro'), glowDistrict(), mapSpan('cafaro')) : (movePiece('off5'), mapSpan('offcampus')); }
-        else if (step === 5) { side === 'L' ? (movePiece('wick'), glowDistrict(), mapSpan('wick')) : (movePiece('off6'), mapSpan('offcampus')); }
-        else if (step === 6) { side === 'L' ? (movePiece('courtyards'), glowDistrict(), mapSpan('courtyards')) : (movePiece('off7'), mapSpan('offcampus')); movePiece('finish'); setTimeout(showResults, 3500); return; }
+        if (step === 0) { side === 'L' ? (movePiece('lyden'), mapSpan('lyden')) : (movePiece('off1'), mapSpan('offcampus')); } 
+        else if (step === 1) { side === 'L' ? (movePiece('kilcawley'), mapSpan('kilcawley')) : (movePiece('off2'), mapSpan('offcampus')); }
+        else if (step === 2) { side === 'L' ? (movePiece('weller'), mapSpan('weller')) : (movePiece('off3'), mapSpan('offcampus')); }
+        else if (step === 3) { side === 'L' ? (movePiece('kilcawley'), mapSpan('kilcawley')) : (movePiece('off4'), mapSpan('offcampus')); }
+        else if (step === 4) { side === 'L' ? (movePiece('cafaro'), mapSpan('cafaro')) : (movePiece('off5'), mapSpan('offcampus')); }
+        else if (step === 5) { side === 'L' ? (movePiece('wick'), mapSpan('wick')) : (movePiece('off6'), mapSpan('offcampus')); }
+        else if (step === 6) { side === 'L' ? (movePiece('courtyards'), mapSpan('courtyards')) : (movePiece('off7'), mapSpan('offcampus')); movePiece('finish'); setTimeout(showResults, 3500); return; }
         
         step++;
         updateQuestion();
@@ -246,9 +235,7 @@
 
     function movePiece(id) {
         const t = document.getElementById(id);
-        const board = document.getElementById('board');
-        const rect = board.getBoundingClientRect();
-        
+        const b = document.getElementById('board');
         player.style.left = t.offsetLeft + (t.offsetWidth/2 - player.offsetWidth/2) + "px";
         player.style.top = t.offsetTop + (t.offsetHeight/2 - player.offsetHeight/2) + "px";
     }
