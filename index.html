@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>YSU Housing Tycoon</title>
     <link href="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css" rel="stylesheet" />
     <style>
@@ -54,7 +54,6 @@
         .match-text { color: var(--ysu-red); font-weight: 900; font-size: 2.2rem; text-transform: uppercase; margin-top: 15px; }
         .final-link { display: block; margin: 15px 0; color: var(--ysu-red); text-decoration: underline; font-size: 1rem; font-weight: bold; }
 
-        /* MOBILE ONLY STYLES (Applies to phones only) */
         @media (max-width: 768px) {
             #board { width: 95vw; height: 95vw; gap: 8px; transform: rotateX(15deg); }
             :root { --prism-h: 30px; }
@@ -64,8 +63,8 @@
             .btn-action { padding: 12px 8px; font-size: 0.75rem; margin: 5px 0; }
             #player { width: 40px; height: 40px; font-size: 1.4rem; }
             #top-banner { font-size: 1rem; }
-            .deck { width: 100vw; }
-            .intro-card { width: 42vw; height: 280px; padding: 10px; font-size: 0.65rem; }
+            .deck { width: 100vw; height: auto; display: flex; flex-direction: row; gap: 5px; }
+            .intro-card { width: 45vw; height: 260px; padding: 10px; font-size: 0.65rem; }
             .intro-card h2 { font-size: 0.85rem; }
         }
     </style>
@@ -123,12 +122,12 @@
 </div>
 
 <div id="results-overlay">
-    <div style="background:#fff; color:#000; padding:45px; border:12px solid #000; max-width:550px; border-radius: 20px;">
-        <div id="p-icon" style="font-size: 5.5rem;"></div>
-        <h1 id="p-name" style="margin:10px 0; font-size: 1.8rem;"></h1>
-        <p id="res-body" style="font-size:1.1rem; line-height:1.4; color: #222; text-align: left;"></p>
+    <div style="background:#fff; color:#000; padding:30px; border:10px solid #000; max-width:500px; width:85%; border-radius: 20px; overflow-y:auto; max-height:85vh;">
+        <div id="p-icon" style="font-size: 4rem;"></div>
+        <h1 id="p-name" style="margin:10px 0; font-size: 1.5rem;"></h1>
+        <p id="res-body" style="font-size:1rem; line-height:1.4; color: #222; text-align: left;"></p>
         <hr>
-        <p class="match-text" id="housing-final"></p>
+        <p class="match-text" id="housing-final" style="font-size: 1.4rem;"></p>
         <div id="link-area"></div>
         <button onclick="location.reload()" style="padding:15px 30px; font-family:'Bungee'; background:#000; color:#fff; border:none; cursor:pointer; width:100%; margin-top: 20px; border-radius: 8px;">RESTART</button>
     </div>
@@ -146,14 +145,6 @@
         offcampus: {center: [-80.65376, 41.10558], zoom: 16.3, pitch: 40, bearing: -151},
         neutral: {center: [-80.64692, 41.10676], zoom: 16.0, pitch: 40, bearing: -133}
     };
-
-    window.addEventListener('keydown', (e) => {
-        if (e.key.toLowerCase() === 'l') {
-            const c = map.getCenter(); const z = map.getZoom(); const p = map.getPitch(); const b = map.getBearing();
-            const msg = `center: [${c.lng.toFixed(5)}, ${c.lat.toFixed(5)}], zoom: ${z.toFixed(1)}, pitch: ${p.toFixed(0)}, bearing: ${b.toFixed(0)}`;
-            console.log(msg); alert(msg);
-        }
-    });
 
     let timeLeft = 5;
     const interval = setInterval(() => {
@@ -188,7 +179,7 @@
         { L: "Summers at Home", R: "Live Year-Round" },
         { L: "One bill per semester & financial aid", R: "Personal budget & monthly payments" },
         { L: "24/7 access to staff and support", R: "Independent problem solving" },
-        { L: "Clean my room", R: "Clean room, bathroom & kitchen" },
+        { L: "Clean my room", R: "Clean my room, bathroom & kitchen" },
         { L: "Flexible contract (Abroad/Graduation/Internship)", R: "1-Year lease commitment" }
     ];
 
@@ -203,7 +194,16 @@
     }
     updateQuestion();
 
-    function mapSpan(loc) { map.flyTo({ ...bldgCoords[loc], speed: 0.6 }); }
+    // MOBILE ZOOM OFFSET LOGIC
+    function mapSpan(loc) { 
+        const isMobile = window.innerWidth <= 768;
+        const config = { ...bldgCoords[loc] };
+        if (isMobile && loc !== 'neutral') {
+            config.zoom = config.zoom - 1.2; // Back out 1.2 levels for mobile
+        }
+        map.flyTo({ ...config, speed: 0.6 }); 
+    }
+
     function glowDistrict() { campusUnits.forEach(u => u.classList.add('campus-glow')); }
 
     function handleChoice(side) {
@@ -234,14 +234,12 @@
         const linkArea = document.getElementById('link-area');
         
         if(scoreL >= 4) {
-            pIcon.innerText = "⚾"; 
-            pName.innerText = "STEVE HARRINGTON (Stranger Things)";
+            pIcon.innerText = "⚾"; pName.innerText = "STEVE HARRINGTON (Stranger Things)";
             body.innerText = "You're the heart of the community! Like Steve, you thrive when you're part of a team, value looking out for your neighbors, and prefer an environment with built-in support systems.";
             hFinal.innerText = "MATCH: YSU RESIDENCE HALLS";
             linkArea.innerHTML = '<a href="https://housing.ysu.edu" class="final-link" target="_blank">Link to Apply: housing.ysu.edu</a>';
         } else {
-            pIcon.innerText = "🎻"; 
-            pName.innerText = "WEDNESDAY ADDAMS (Wednesday)";
+            pIcon.innerText = "🎻"; pName.innerText = "WEDNESDAY ADDAMS (Wednesday)";
             body.innerText = "You're a strategic individual! Like Wednesday, you prioritize autonomy and personal focus. You prefer a quiet, controlled space where you can manage your own path independently.";
             hFinal.innerText = "MATCH: OFF-CAMPUS LIVING";
             linkArea.innerHTML = '<a href="https://housingfinder.ysu.edu" class="final-link" target="_blank">Link to Review: housingfinder.ysu.edu</a>';
