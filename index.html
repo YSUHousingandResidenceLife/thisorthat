@@ -205,7 +205,7 @@
             
             // Push building DOWN on screen (Decreasing the second number moves it down)
             // Changed from -0.0005 to -0.0012 to prevent bottom cutoff
-            config.center = [config.center[0], config.center[1] - 0.0012]; 
+            config.center = [config.center[0], config.center[1] - 0.0005]; 
         }
         
         map.flyTo({ ...config, speed: 0.6 }); 
