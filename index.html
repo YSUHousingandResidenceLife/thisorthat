@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>This or That — Housing Edition (Editor)</title>
+
+<link href="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css" rel="stylesheet" />
+
+<style>
+html,body{height:100%;margin:0}
+#map{position:absolute;inset:0}
+
+/* ===== TOP HUD (GAME DATA) ===== */
+#hud{
+  position:absolute;
+  top:12px;
+  left:50%;
+  transform:translateX(-50%);
+  z-index:12;
+  background:rgba(255,255,255,.96);
+  border-radius:16px;
+  padding:14px 18px;
+  box-shadow:0 8px 22px rgba(0,0,0,.18);
+  min-width:520px;
+  text-align:center;
+  font-family:'Bungee',system-ui;
+}
+#hud h1{
+  font-size:16px;
+  margin:0 0 6px;
+  font-weight:900;
+}
+#hud .q{
+  font-size:18px;
+  margin-bottom:6px;
+}
+#hud .opts{
+  display:flex;
+  gap:10px;
+}
+#hud .opt{
+  flex:1;
+  padding:8px 10px;
+  border-radius:10px;
+  border:2px solid #000;
+  font-size:14px;
+  background:#fff;
+}
+
+/* ===== EDIT PANEL ===== */
+.panel{
+  position:absolute;
+  top:12px;
+  left:12px;
+  background:rgba(255,255,255,.92);
+  backdrop-filter:blur(4px);
+  border-radius:14px;
+  box-shadow:0 6px 18px rgba(0,0,0,.15);
+  padding:10px 12px;
+  font:14px/1.3 system-ui;
+  z-index:11;
+  min-width:300px;
+}
+.panel h2{font-size:14px;margin:0 0 8px;font-weight:700}
+.row{display:flex;gap:8px;align-items:center;margin:6px 0}
+.row input[type=text]{
+  flex:1;padding:6px 8px;border-radius:8px;border:1px solid #ddd
+}
+.buttons{display:flex;gap:8px;flex-wrap:wrap}
+button{
+  border:none;cursor:pointer;padding:8px 10px;
+  border-radius:10px;background:#111;color:#fff;font-weight:700
+}
+button.secondary{background:#E4002B}
+button.ghost{background:#f2f2f2;color:#111}
+.hint{font-size:12px;color:#555;margin-top:6px}
+</style>
+</head>
+
+<body>
+
+<div id="map"></div>
+
+<!-- GAME HUD -->
+<div id="hud">
+  <h1>THIS OR THAT — HOUSING EDITION</h1>
+  <div class="q" id="hudQuestion"></div>
+  <div class="opts">
+    <div class="opt" id="hudLeft"></div>
+    <div class="opt" id="hudRight"></div>
+  </div>
+</div>
+
+<!-- EDIT PANEL -->
+<div class="panel">
+  <h2>Traffic Light Editor</h2>
+  <div class="row">
+    <label><input type="checkbox" id="editToggle"> Enable edit (click map)</label>
+  </div>
+  <div class="row">
+    <input id="defaultNote" type="text" placeholder="Optional note…" />
+  </div>
+  <div class="buttons">
+    <button id="undoBtn" class="ghost">Undo</button>
+    <button id="clearBtn" class="ghost">Clear</button>
+    <button id="downloadBtn" class="secondary">Download JSON</button>
+    <label>
+      <button class="ghost">Load JSON</button>
+      <input id="fileInput" type="file" accept=".json,.geojson" hidden>
+    </label>
+  </div>
+  <div class="hint">
+    One click places the checkpoint for the <b>current question</b>.  
+    Colors cycle: <span style="color:#2ecc71">green</span> →
+    <span style="color:#f1c40f">yellow</span> →
+    <span style="color:#e74c3c">red</span>.
+  </div>
+</div>
+
+<script src="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.js"></script>
+<script>
+/* =========================
+   SHARED QUESTIONS (FROM GAME)
+   ========================= */
+const questions = [
+  { q: "HOUSING VIBE?", l: "Activities & Social", r: "Privacy & Quiet", loc: [-80.6482, 41.1025] },
+  { q: "SOCIAL STYLE?", l: "Meet Students", r: "Keep to Myself", loc: [-80.6485, 41.1035] },
+  { q: "DINING?", l: "Order & Eat", r: "Grocery & Cooking", loc: [-80.6490, 41.1045] },
+  { q: "RESIDENCY?", l: "Summers at Home", r: "Live Year-Round", loc: [-80.6500, 41.1060] },
+  { q: "FINANCES?", l: "One Bill / Aid", r: "Monthly Budget", loc: [-80.6515, 41.1075] },
+  { q: "SUPPORT?", l: "24/7 Staff Support", r: "Indie Problem Solving", loc: [-80.6505, 41.1090] },
+  { q: "CLEANING?", l: "Clean My Room", r: "Room, Bath & Living", loc: [-80.6480, 41.1085] },
+  { q: "CONTRACT?", l: "Flexible Study", r: "1-Year Lease", loc: [-80.6465, 41.1072] }
+];
+
+/* =========================
+   MAP SETUP
+   ========================= */
+mapboxgl.accessToken =
+'pk.eyJ1IjoieXN1LWhybCIsImEiOiJjbWZtcjVkNXUwNTJkMmxvaDZpaTF6b2x2In0.8-4W7BoAy5GmwM2_-L_Jzw';
+
+const map = new mapboxgl.Map({
+  container:'map',
+  style:'mapbox://styles/ysu-hrl/cmfpr50qm00a401ry0uzb5b1q',
+  center: questions[0].loc,
+  zoom:16.8,
+  pitch:60,
+  bearing:-133.6
+});
+map.addControl(new mapboxgl.NavigationControl(),'top-right');
+
+/* =========================
+   STATE
+   ========================= */
+const colors = ['green','yellow','red'];
+let colorIndex = 0;
+let qIndex = 0;
+
+const lights = {
+  type:'FeatureCollection',
+  features:[]
+};
+
+/* =========================
+   HUD
+   ========================= */
+function updateHUD(){
+  const q = questions[qIndex];
+  if(!q){
+    document.getElementById('hudQuestion').innerText = 'ALL QUESTIONS PLACED';
+    document.getElementById('hudLeft').innerText = '';
+    document.getElementById('hudRight').innerText = '';
+    return;
+  }
+  document.getElementById('hudQuestion').innerText = q.q;
+  document.getElementById('hudLeft').innerText = q.l;
+  document.getElementById('hudRight').innerText = q.r;
+
+  map.flyTo({ center:q.loc, speed:0.9, curve:1.2 });
+}
+
+/* =========================
+   LOAD MAP + LAYER
+   ========================= */
+map.on('load',()=>{
+  map.loadImage('traffic-light.png',(err,img)=>{
+    if(err) throw err;
+    map.addImage('traffic-light',img,{pixelRatio:2});
+  });
+
+  map.addSource('lights',{type:'geojson',data:lights});
+  map.addLayer({
+    id:'lights-layer',
+    type:'symbol',
+    source:'lights',
+    layout:{
+      'icon-image':'traffic-light',
+      'icon-size':0.45,
+      'icon-allow-overlap':true,
+      'icon-anchor':'bottom'
+    },
+    paint:{
+      'icon-color':[
+        'match',['get','signal'],
+        'green','#2ecc71',
+        'yellow','#f1c40f',
+        'red','#e74c3c',
+        '#ffffff'
+      ]
+    }
+  });
+
+  loadLocal();
+  updateHUD();
+});
+
+/* =========================
+   CORE LOGIC
+   ========================= */
+function sync(){
+  map.getSource('lights').setData(lights);
+  localStorage.setItem('rth_lights_v2',JSON.stringify({lights,qIndex,colorIndex}));
+}
+
+function addLight(lngLat,note){
+  if(!questions[qIndex]) return;
+
+  const q = questions[qIndex];
+  const signal = colors[colorIndex];
+  colorIndex = (colorIndex+1)%colors.length;
+
+  lights.features.push({
+    type:'Feature',
+    geometry:{ type:'Point', coordinates:[lngLat.lng,lngLat.lat] },
+    properties:{
+      idx: lights.features.length+1,
+      qIndex,
+      question:q.q,
+      left:q.l,
+      right:q.r,
+      signal,
+      note:note||''
+    }
+  });
+
+  qIndex++;
+  updateHUD();
+  sync();
+}
+
+function undo(){
+  if(!lights.features.length) return;
+  lights.features.pop();
+  qIndex = Math.max(0,qIndex-1);
+  colorIndex = (colorIndex+colors.length-1)%colors.length;
+  updateHUD();
+  sync();
+}
+
+function clearAll(){
+  lights.features.length=0;
+  qIndex=0;
+  colorIndex=0;
+  updateHUD();
+  sync();
+}
+
+function loadLocal(){
+  try{
+    const raw = localStorage.getItem('rth_lights_v2');
+    if(!raw) return;
+    const obj = JSON.parse(raw);
+    lights.features = obj.lights.features || [];
+    qIndex = obj.qIndex || 0;
+    colorIndex = obj.colorIndex || 0;
+    sync();
+  }catch{}
+}
+
+/* =========================
+   UI EVENTS
+   ========================= */
+map.on('click',e=>{
+  if(!editToggle.checked) return;
+  const def = defaultNote.value.trim();
+  const typed = prompt('Checkpoint note (optional):', def);
+  addLight(e.lngLat, typed===null?def:typed);
+});
+
+undoBtn.onclick = undo;
+clearBtn.onclick = ()=>confirm('Clear ALL checkpoints?') && clearAll();
+
+downloadBtn.onclick = ()=>{
+  const blob = new Blob([JSON.stringify(lights,null,2)],{type:'application/geo+json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'race_traffic_lights.geojson';
+  a.click();
+};
+
+fileInput.onchange = e=>{
+  const f = e.target.files[0];
+  if(!f) return;
+  const r = new FileReader();
+  r.onload = ()=>{
+    try{
+      const d = JSON.parse(r.result);
+      if(d.type==='FeatureCollection'){
+        lights.features = d.features||[];
+        qIndex = lights.features.length;
+        colorIndex = qIndex % colors.length;
+        updateHUD();
+        sync();
+      }
+    }catch{ alert('Invalid JSON'); }
+  };
+  r.readAsText(f);
+};
+</script>
+
+</body>
+</html>
