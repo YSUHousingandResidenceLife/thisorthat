@@ -1,191 +1,272 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-  <title>YSU Housing Race: Driver Reveal</title>
-  <link href="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css" rel="stylesheet" />
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Bungee&display=swap');
-    html, body { height:100%; margin:0; overflow: hidden; font-family: 'Bungee', cursive; }
-    #map { position:absolute; inset:0; }
-    #hud { position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); z-index: 100; width: 90%; max-width: 800px; }
-    .billboard { background: #E4002B; color: white; padding: 20px; border-radius: 15px; border: 5px solid white; text-align: center; font-size: 1.5rem; margin-bottom: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-    .btn-row { display: flex; gap: 15px; }
-    .choice-btn { flex: 1; padding: 25px 15px; border: 5px solid #000; border-radius: 15px; cursor: pointer; font-family: 'Bungee'; font-size: 1rem; color: white; transition: 0.2s; text-transform: uppercase; box-shadow: 0 8px 0 #000; }
-    .red-btn { background: #E4002B; }
-    .black-btn { background: #111; }
-    .choice-btn:hover { transform: translateY(-5px); box-shadow: 0 13px 0 #000; filter: brightness(1.2); }
-    
-    /* Result Pop-up */
-    #results { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 1000; flex-direction: column; align-items: center; justify-content: center; text-align: center; color: white; }
-    .result-card { background: white; color: black; padding: 30px; border-radius: 30px; border: 8px solid #E4002B; max-width: 550px; }
-    .character-avatar { font-size: 5rem; margin-bottom: 10px; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YSU Housing Tycoon: Final Count</title>
+    <link href="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css" rel="stylesheet" />
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Bungee&display=swap');
+        :root { --ysu-red: #E4002B; --ysu-gold: #FFD700; --prism-h: 50px; }
+        
+        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Bungee', cursive; overflow: hidden; background: #000; }
+        
+        #map { position: absolute; inset: 0; z-index: 1; }
+
+        #top-banner {
+            position: fixed; top: 0; left: 0; width: 100%; background: var(--ysu-red);
+            color: white; text-align: center; padding: 12px 0; z-index: 2000;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5); border-bottom: 4px solid white;
+            font-size: 1.3rem; letter-spacing: 1px;
+        }
+
+        /* Teaser Cards & Countdown */
+        #intro-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 3000;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+        #countdown-timer {
+            color: white; font-size: 4rem; margin-bottom: 20px; text-shadow: 0 0 20px var(--ysu-red);
+        }
+        .deck { position: relative; width: 600px; height: 400px; display: flex; justify-content: space-around; align-items: center; }
+        
+        .intro-card {
+            width: 250px; height: 350px; background: #fff;
+            border: 6px solid #000; border-radius: 20px; display: flex;
+            flex-direction: column; align-items: center; justify-content: center;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.8); padding: 20px; text-align: center;
+            transition: all 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .card-1 { transform: rotate(-8deg) translateY(20px); border-color: var(--ysu-red); }
+        .card-2 { transform: rotate(8deg) translateY(-20px); border-color: #000; }
+        
+        .shuffle-anim .card-1 { animation: flyAwayLeft 2s cubic-bezier(0.45, 0.05, 0.55, 0.95) forwards; }
+        .shuffle-anim .card-2 { animation: flyAwayRight 2s cubic-bezier(0.45, 0.05, 0.55, 0.95) forwards; }
+
+        @keyframes flyAwayLeft {
+            0% { transform: rotate(-8deg) translateX(0); opacity: 1; }
+            100% { transform: rotate(-25deg) translateX(-1500px); opacity: 0; }
+        }
+        @keyframes flyAwayRight {
+            0% { transform: rotate(8deg) translateX(0); opacity: 1; }
+            100% { transform: rotate(25deg) translateX(1500px); opacity: 0; }
+        }
+
+        /* 3D Board UI */
+        #game-overlay { 
+            position: absolute; inset: 0; z-index: 10; 
+            display: flex; align-items: center; justify-content: center; 
+            pointer-events: none; perspective: 2000px; padding-top: 60px;
+        }
+        #board { 
+            width: 86vmin; height: 86vmin; display: grid; 
+            grid-template-columns: repeat(5, 1fr); grid-template-rows: repeat(5, 1fr); 
+            gap: 15px; position: relative; pointer-events: auto;
+            transform: rotateX(25deg); transform-style: preserve-3d;
+        }
+
+        .prism-wrap { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; transition: transform 0.4s ease; }
+        .face { position: absolute; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 0.65rem; color: #fff; text-transform: uppercase; border: 1.5px solid rgba(255,255,255,0.4); backface-visibility: hidden; }
+        .f-top { width: 100%; height: 100%; transform: translateZ(var(--prism-h)); background: rgba(255,255,255,0.25); backdrop-filter: blur(10px); }
+        .f-front { width: 100%; height: var(--prism-h); bottom: 0; left: 0; transform-origin: bottom; transform: rotateX(-90deg); filter: brightness(0.6); }
+        .f-right { width: var(--prism-h); height: 100%; top: 0; right: 0; transform-origin: right; transform: rotateY(90deg); filter: brightness(0.4); }
+
+        .lyden-v .face { background-color: #ff1a1a; }
+        .cafaro-v .face { background-color: #ff6600; }
+        .wick-v .face { background-color: #9900cc; }
+        .weller-v .face { background-color: #ff0066; }
+        .kil-v .face { background-color: #e68a00; }
+        .court-v .face { background-color: #00cccc; }
+        .off-v .face { background-color: #0044cc; }
+        .corner-v .face { background-color: #111; border: 2px solid #fff; }
+
+        .campus-glow .f-top { box-shadow: 0 0 50px var(--ysu-gold), inset 0 0 25px #fff; border: 4px solid var(--ysu-gold); }
+
+        #center-ui { grid-area: 2 / 2 / 5 / 5; display: flex; align-items: center; justify-content: center; pointer-events: none; transform: translateZ(80px); }
+        .decision-card { background: #fff; border: 6px solid #000; padding: 25px; width: 85%; pointer-events: auto; box-shadow: 15px 15px 0 var(--ysu-red); text-align: center; color: #000; }
+        .btn-action { background: #000; color: #fff; border: none; padding: 14px; margin: 8px 0; cursor: pointer; font-family: 'Bungee'; font-size: 0.85rem; width: 100%; border-radius: 4px; }
+        
+        #player { 
+            position: absolute; width: 50px; height: 50px; background: var(--ysu-gold); 
+            border-radius: 50%; border: 4px solid #fff; z-index: 500; 
+            transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+            display: flex; align-items: center; justify-content: center; 
+            font-size: 1.8rem; box-shadow: 0 10px 25px rgba(0,0,0,0.8); transform: translateZ(100px);
+        }
+
+        #results-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 4000; flex-direction: column; align-items: center; justify-content: center; color: #fff; text-align: center; padding: 20px; }
+        .match-text { color: var(--ysu-red); font-weight: 900; font-size: 2.2rem; text-transform: uppercase; margin-top: 15px; }
+    </style>
 </head>
 <body>
 
+<div id="top-banner">THIS OR THAT CHARACTER HOUSING MATCH</div>
+
+<div id="intro-overlay">
+    <div id="countdown-timer">5</div>
+    <div class="deck" id="deck-container">
+        <div class="intro-card card-1">
+            <h2 style="color:var(--ysu-red)">TEAM PLAYER?</h2>
+            <p>Are you the<br><strong>SOCIAL NAVIGATOR?</strong></p>
+            <span style="font-size: 3.5rem;">⚾</span>
+            <p style="font-size: 0.7rem; color: #666; margin-top: 10px;">Thrives with the group...</p>
+        </div>
+        <div class="intro-card card-2">
+            <h2>LONE WOLF?</h2>
+            <p>Or the<br><strong>INDEPENDENT SOUL?</strong></p>
+            <span style="font-size: 3.5rem;">🕷️</span>
+            <p style="font-size: 0.7rem; color: #666; margin-top: 10px;">Master of their own lane...</p>
+        </div>
+    </div>
+</div>
+
 <div id="map"></div>
 
-<div id="hud">
-  <div class="billboard" id="q-box">YSU HOUSING RACE</div>
-  <div class="btn-row">
-    <button id="btn-l" class="choice-btn red-btn" onclick="handleSelect('left')"></button>
-    <button id="btn-r" class="choice-btn black-btn" onclick="handleSelect('right')"></button>
-  </div>
+<div id="game-overlay">
+    <div id="board">
+        <div id="player">🐧</div>
+        
+        <div class="prism-wrap corner-v" id="go"><div class="face f-top">START</div><div class="face f-front"></div><div class="face f-right"></div></div>
+        <div class="prism-wrap lyden-v campus" id="lyden"><div class="face f-top">LYDEN</div><div class="face f-front"></div><div class="face f-right"></div></div>
+        <div class="prism-wrap cafaro-v campus" id="cafaro"><div class="face f-top">CAFARO</div><div class="face f-front"></div><div class="face f-right"></div></div>
+        <div class="prism-wrap wick-v campus" id="wick"><div class="face f-top">WICK</div><div class="face f-front"></div><div class="face f-right"></div></div>
+        <div class="prism-wrap corner-v" id="parking"><div class="face f-top">WIFI</div><div class="face f-front"></div><div class="face f-right"></div></div>
+        
+        <div class="prism-wrap weller-v campus" id="weller" style="grid-row:2; grid-column:5"><div class="face f-top">WELLER</div><div class="face f-front"></div><div class="face f-right"></div></div>
+        <div class="prism-wrap kil-v campus" id="kilcawley" style="grid-row:3; grid-column:5"><div class="face f-top">KILCAWLEY</div><div class="face f-front"></div><div class="face f-right"></div></div>
+        <div class="prism-wrap court-v" id="courtyards" style="grid-row:4; grid-column:5"><div class="face f-top">COURTYARDS</div><div class="face f-front"></div><div class="face f-right"></div></div>
+        <div class="prism-wrap corner-v" id="finish" style="grid-row:5; grid-column:5"><div class="face f-top">FINISH</div><div class="face f-front"></div><div class="face f-right"></div></div>
+        
+        <div class="prism-wrap off-v" id="off1" style="grid-row:5; grid-column:4"><div class="face f-top">OFF-CAMPUS</div><div class="face f-front"></div><div class="face f-right"></div></div>
+        <div class="prism-wrap off-v" id="off2" style="grid-row:5; grid-column:3"><div class="face f-top">OFF-CAMPUS</div><div class="face f-front"></div><div class="face f-right"></div></div>
+        <div class="prism-wrap off-v" id="off3" style="grid-row:5; grid-column:2"><div class="face f-top">OFF-CAMPUS</div><div class="face f-front"></div><div class="face f-right"></div></div>
+        <div class="prism-wrap off-v" id="off4" style="grid-row:5; grid-column:1"><div class="face f-top">OFF-CAMPUS</div><div class="face f-front"></div><div class="face f-right"></div></div>
+        
+        <div class="prism-wrap off-v" id="off5" style="grid-row:4; grid-column:1"><div class="face f-top">OFF-CAMPUS</div><div class="face f-front"></div><div class="face f-right"></div></div>
+        <div class="prism-wrap off-v" id="off6" style="grid-row:3; grid-column:1"><div class="face f-top">OFF-CAMPUS</div><div class="face f-front"></div><div class="face f-right"></div></div>
+        <div class="prism-wrap off-v" id="off7" style="grid-row:2; grid-column:1"><div class="face f-top">OFF-CAMPUS</div><div class="face f-front"></div><div class="face f-right"></div></div>
+
+        <div id="center-ui">
+            <div class="decision-card">
+                <p id="q-text">Which atmosphere suits you best?</p>
+                <button class="btn-action" onclick="handleChoice('L')">ACTIVITIES</button>
+                <button class="btn-action" onclick="handleChoice('R')">PRIVACY</button>
+            </div>
+        </div>
+    </div>
 </div>
 
-<div id="results">
-  <div class="result-card">
-    <div class="character-avatar" id="char-icon">🚗</div>
-    <h1 id="res-title" style="margin: 0 0 10px 0;">DRIVER REVEALED!</h1>
-    <h2 id="char-name" style="color: #E4002B; margin-bottom: 5px;"></h2>
-    <p id="res-body" style="font-size: 1.1rem; line-height: 1.4;"></p>
-    <p style="font-weight: bold; color: #555;">Based on your driving style, a Residence Hall/Apartment is suited for you.</p>
-    <button onclick="location.reload()" style="padding:15px 30px; font-family:'Bungee'; background:#111; color:white; border:none; border-radius:10px; cursor:pointer; margin-top: 15px;">DRIVE AGAIN</button>
-  </div>
+<div id="results-overlay">
+    <div style="background:#fff; color:#000; padding:45px; border:12px solid #000; max-width:550px; border-radius: 20px;">
+        <div id="p-icon" style="font-size: 5.5rem;"></div>
+        <h3 style="margin:0; color:var(--ysu-red); letter-spacing: 2px;">THE REVEAL:</h3>
+        <h1 id="p-name" style="margin:10px 0; font-size: 1.8rem;"></h1>
+        <p id="res-body" style="font-size:1.15rem; line-height:1.5; color: #222;"></p>
+        <hr style="border: 2px solid #eee;">
+        <p class="match-text" id="housing-final"></p>
+        <button onclick="location.reload()" style="padding:18px 30px; font-family:'Bungee'; background:#000; color:#fff; border:none; cursor:pointer; width:100%; margin-top: 25px; border-radius: 8px;">RETAKE SEARCH</button>
+    </div>
 </div>
 
-<script src="https://unpkg.com/three@0.147.0/build/three.min.js"></script>
-<script src="https://unpkg.com/three@0.147.0/examples/js/loaders/GLTFLoader.js"></script>
 <script src="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.js"></script>
-
 <script>
-  const questions = [
-    { q: "HOUSING VIBE?", l: "Activities & Social", r: "Privacy & Quiet", loc: [-80.6482, 41.1025] },
-    { q: "SOCIAL STYLE?", l: "Meet Students", r: "Keep to Myself", loc: [-80.6485, 41.1035] },
-    { q: "DINING?", l: "Order & Eat", r: "Grocery & Cooking", loc: [-80.6490, 41.1045] },
-    { q: "RESIDENCY?", l: "Summers at Home", r: "Live Year-Round", loc: [-80.6500, 41.1060] },
-    { q: "FINANCES?", l: "One Bill / Aid", r: "Monthly Budget", loc: [-80.6515, 41.1075] },
-    { q: "SUPPORT?", l: "24/7 Staff Support", r: "Indie Problem Solving", loc: [-80.6505, 41.1090] },
-    { q: "CLEANING?", l: "Clean My Room", r: "Room, Bath & Living", loc: [-80.6480, 41.1085] },
-    { q: "CONTRACT?", l: "Flexible Study", r: "1-Year Lease", loc: [-80.6465, 41.1072] }
-  ];
+    // Countdown Timer Logic
+    let timeLeft = 5;
+    const timerElem = document.getElementById('countdown-timer');
+    const interval = setInterval(() => {
+        timeLeft--;
+        timerElem.innerText = timeLeft;
+        if (timeLeft <= 0) {
+            clearInterval(interval);
+            timerElem.style.display = 'none';
+            document.getElementById('deck-container').classList.add('shuffle-anim');
+            setTimeout(() => {
+                document.getElementById('intro-overlay').style.display = 'none';
+            }, 2000);
+        }
+    }, 1000);
 
-  let step = 0;
-  let scoreLeft = 0;
-  let nextIsRed = true;
-  const bricks = [];
-  let carModel;
-
-  mapboxgl.accessToken = 'pk.eyJ1IjoieXN1LWhybCIsImEiOiJjbWZtcjVkNXUwNTJkMmxvaDZpaTF6b2x2In0.8-4W7BoAy5GmwM2_-L_Jzw';
-  const map = new mapboxgl.Map({
-    container: 'map',
-    style: 'mapbox://styles/ysu-hrl/cmfpr50qm00a401ry0uzb5b1q',
-    center: [-80.6482, 41.1025],
-    zoom: 18.5,
-    pitch: 65,
-    bearing: -133.6,
-    interactive: true 
-  });
-
-  // 3D Custom Layer logic
-  const customLayer = {
-    id: '3d-model',
-    type: 'custom',
-    renderingMode: '3d',
-    onAdd: function (map, gl) {
-      this.camera = new THREE.Camera();
-      this.scene = new THREE.Scene();
-      const light = new THREE.DirectionalLight(0xffffff);
-      light.position.set(0, -70, 100).normalize();
-      this.scene.add(light);
-      this.scene.add(new THREE.AmbientLight(0x404040, 2));
-
-      const loader = new THREE.GLTFLoader();
-      // USING RAW GITHUB URL FOR PROPER LOADING
-      const url = 'https://raw.githubusercontent.com/YSUHousingandResidenceLife/thisorthat/main/Car.glb';
-      loader.load(url, (gltf) => {
-        carModel = gltf.scene;
-        this.scene.add(carModel);
-      });
-      this.renderer = new THREE.WebGLRenderer({ canvas: map.getCanvas(), context: gl, antialias: true });
-      this.renderer.autoClear = false;
-    },
-    render: function (gl, matrix) {
-      const modelOrigin = map.getCenter().toArray();
-      const modelAsPoint = mapboxgl.MercatorCoordinate.fromLngLat(modelOrigin, 0);
-      
-      const m = new THREE.Matrix4().fromArray(matrix);
-      const l = new THREE.Matrix4()
-        .makeTranslation(modelAsPoint.x, modelAsPoint.y, modelAsPoint.z)
-        .scale(new THREE.Vector3(modelAsPoint.meterInMercatorCoordinateUnits(), -modelAsPoint.meterInMercatorCoordinateUnits(), modelAsPoint.meterInMercatorCoordinateUnits()))
-        .multiply(new THREE.Matrix4().makeRotationX(Math.PI / 2));
-
-      this.camera.projectionMatrix = m.multiply(l);
-      this.renderer.resetState();
-      this.renderer.render(this.scene, this.camera);
-      map.triggerRepaint();
-    }
-  };
-
-  map.on('load', () => {
-    map.addLayer(customLayer);
-    map.addSource('bricks', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
-    map.addLayer({
-      id: 'bricks-layer', type: 'fill', source: 'bricks',
-      paint: { 'fill-color': ['get', 'color'], 'fill-opacity': 1, 'fill-outline-color': '#fff' }
+    mapboxgl.accessToken = 'pk.eyJ1IjoieXN1LWhybCIsImEiOiJjbWZtcjVkNXUwNTJkMmxvaDZpaTF6b2x2In0.8-4W7BoAy5GmwM2_-L_Jzw';
+    const map = new mapboxgl.Map({
+        container: 'map',
+        style: 'mapbox://styles/ysu-hrl/cmfpr50qm00a401ry0uzb5b1q',
+        center: [-80.6482, 41.1025],
+        zoom: 18.5, pitch: 65, bearing: -133.6, interactive: true
     });
-    updateGame();
-  });
 
-  function handleSelect(side) {
-    if (side === 'left') scoreLeft++;
-    const lngLat = map.getCenter();
-    const color = nextIsRed ? '#E4002B' : '#111111';
-    nextIsRed = !nextIsRed;
+    const questions = [
+        { q: "HOUSING VIBE?", L: "ACTIVITIES", R: "PRIVACY" },
+        { q: "DINING CHOICE?", L: "ORDER/EAT", R: "COOK MEAL" },
+        { q: "STAY DURATION?", L: "SUMMERS HOME", R: "YEAR ROUND" },
+        { q: "PAYMENT PLAN?", L: "ONE BILL", R: "MONTHLY" },
+        { q: "SUPPORT?", L: "24/7 STAFF", R: "FIX IT MYSELF" },
+        { q: "CLEANING?", L: "ROOM ONLY", R: "ROOM + KITCHEN" },
+        { q: "CONTRACT?", L: "FLEX CONTRACT", R: "1-YEAR LEASE" }
+    ];
 
-    const sizeLng = 0.00007; const sizeLat = 0.000013;
-    bricks.push({
-      type: 'Feature',
-      properties: { color: color },
-      geometry: {
-        type: 'Polygon',
-        coordinates: [[
-          [lngLat.lng - sizeLng, lngLat.lat - sizeLat],
-          [lngLat.lng + sizeLng, lngLat.lat - sizeLat],
-          [lngLat.lng + sizeLng, lngLat.lat + sizeLat],
-          [lngLat.lng - sizeLng, lngLat.lat + sizeLat],
-          [lngLat.lng - sizeLng, lngLat.lat - sizeLat]
-        ]]
-      }
-    });
-    map.getSource('bricks').setData({ type: 'FeatureCollection', features: bricks });
+    let step = 0; let scoreL = 0;
+    const player = document.getElementById('player');
+    const campusUnits = document.querySelectorAll('.campus');
 
-    step++;
-    if (step < questions.length) {
-      updateGame();
-      map.flyTo({ center: questions[step].loc, speed: 0.6, curve: 1 });
-    } else {
-      showResults();
+    function glowCampus() { campusUnits.forEach(u => u.classList.add('campus-glow')); }
+    function clearGlow() { document.querySelectorAll('.prism-wrap').forEach(s => s.classList.remove('campus-glow')); }
+
+    function movePiece(id) {
+        const target = document.getElementById(id);
+        player.style.left = target.offsetLeft + (target.offsetWidth/2 - 25) + "px";
+        player.style.top = target.offsetTop + (target.offsetHeight/2 - 25) + "px";
     }
-  }
 
-  function updateGame() {
-    const d = questions[step];
-    document.getElementById('q-box').innerText = d.q;
-    document.getElementById('btn-l').innerText = d.l;
-    document.getElementById('btn-r').innerText = d.r;
-  }
+    window.onload = () => {
+        movePiece('go');
+        map.on('load', () => {
+            map.addLayer({
+                'id': '3d-buildings',
+                'source': 'composite', 'source-layer': 'building',
+                'filter': ['==', 'extrude', 'true'], 'type': 'fill-extrusion',
+                'paint': {
+                    'fill-extrusion-color': ['interpolate', ['linear'], ['get', 'height'], 0, '#E4002B', 15, '#FFD700', 30, '#00f2ff'],
+                    'fill-extrusion-height': ['get', 'height'], 'fill-extrusion-base': ['get', 'min_height'], 'fill-extrusion-opacity': 0.8
+                }
+            });
+        });
+    };
 
-  function showResults() {
-    document.getElementById('hud').style.display = 'none';
-    const res = document.getElementById('results');
-    const charName = document.getElementById('char-name');
-    const charIcon = document.getElementById('char-icon');
-    const body = document.getElementById('res-body');
-
-    if (scoreLeft >= 5) {
-      charName.innerText = "THE SOCIAL NAVIGATOR";
-      charIcon.innerText = "🚌";
-      body.innerText = "You were driving the Social Navigator! You thrive in the heart of campus, seeking out connections and activities.";
-    } else {
-      charName.innerText = "THE INDEPENDENT EXPLORER";
-      charIcon.innerText = "🏎️";
-      body.innerText = "You were driving the Independent Explorer! You value your own lane, quiet study spots, and a space to call your own.";
+    function handleChoice(side) {
+        clearGlow(); if(side === 'L') scoreL++;
+        if (step === 0) { side === 'L' ? (movePiece('lyden'), glowCampus()) : movePiece('off1'); } 
+        else if (step === 1) { side === 'L' ? (movePiece('kilcawley'), glowCampus()) : movePiece('off2'); }
+        else if (step === 2) { side === 'L' ? (movePiece('wick'), glowCampus()) : (movePiece('off3'), document.getElementById('weller').classList.add('campus-glow')); }
+        else if (step === 3) { side === 'L' ? (movePiece('kilcawley'), glowCampus()) : movePiece('off4'); }
+        else if (step === 4) { side === 'L' ? (movePiece('cafaro'), glowCampus()) : movePiece('off5'); }
+        else if (step === 5) { side === 'L' ? (movePiece('wick'), glowCampus()) : movePiece('off6'); }
+        else if (step === 6) { if(side === 'L') glowCampus(); movePiece('finish'); setTimeout(showResults, 1000); return; }
+        step++;
+        document.getElementById('q-text').innerText = questions[step].q;
+        document.querySelectorAll('.btn-action')[0].innerText = questions[step].L;
+        document.querySelectorAll('.btn-action')[1].innerText = questions[step].R;
     }
-    res.style.display = 'flex';
-  }
+
+    function showResults() {
+        document.getElementById('results-overlay').style.display = 'flex';
+        const pIcon = document.getElementById('p-icon');
+        const pName = document.getElementById('p-name');
+        const body = document.getElementById('res-body');
+        const hFinal = document.getElementById('housing-final');
+
+        if(scoreL >= 4) {
+            pIcon.innerText = "⚾";
+            pName.innerText = "STEVE HARRINGTON (Stranger Things)";
+            body.innerText = "You're the heart of the community! Like Steve, you thrive when you're part of a team, value looking out for your neighbors, and prefer an environment with built-in support systems.";
+            hFinal.innerText = "YSU RESIDENCE HALLS";
+        } else {
+            pIcon.innerText = "🕷️";
+            pName.innerText = "WEDNESDAY ADDAMS (Wednesday)";
+            body.innerText = "You're a strategic individual! Like Wednesday, you prioritize autonomy and personal focus. You prefer a quiet, controlled space where you can manage your own path independently.";
+            hFinal.innerText = "OFF-CAMPUS LIVING";
+        }
+    }
 </script>
 </body>
 </html>
