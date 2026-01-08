@@ -199,16 +199,18 @@
         const isMobile = window.innerWidth <= 768;
         const config = { ...bldgCoords[loc] };
         
-        // Offset for Mobile Vertical Stacking
+        // MOBILE ONLY ADJUSTMENTS
         if (isMobile && loc !== 'neutral') {
             config.zoom = config.zoom - 2.1; 
-            // Pushes the map center point slightly "up" on the phone screen
-            // to align with the board now sitting at the top
-            config.center = [config.center[0], config.center[1] - 0.0005]; 
+            
+            // Push building DOWN on screen (Decreasing the second number moves it down)
+            // Changed from -0.0005 to -0.0012 to prevent bottom cutoff
+            config.center = [config.center[0], config.center[1] - 0.0012]; 
         }
         
         map.flyTo({ ...config, speed: 0.6 }); 
     }
+    
 
     function glowDistrict() { campusUnits.forEach(u => u.classList.add('campus-glow')); }
 
