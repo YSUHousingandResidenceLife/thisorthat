@@ -2,35 +2,58 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>YSU Housing Tycoon</title>
     <link href="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css" rel="stylesheet" />
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Bungee&display=swap');
         :root { --ysu-red: #E4002B; --ysu-gold: #FFD700; --prism-h: 50px; }
-        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Bungee', cursive; overflow: hidden; background: #000; }
+        
+        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Bungee', cursive; overflow: hidden; background: #000; touch-action: manipulation; }
         #map { position: absolute; inset: 0; z-index: 1; }
-        #top-banner { position: fixed; top: 0; left: 0; width: 100%; background: var(--ysu-red); color: white; text-align: center; padding: 12px 0; z-index: 2000; box-shadow: 0 4px 15px rgba(0,0,0,0.5); border-bottom: 4px solid white; font-size: 1.3rem; }
         
-        #intro-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 3000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        #countdown-timer { color: white; font-size: 4rem; margin-bottom: 20px; text-shadow: 0 0 20px var(--ysu-red); }
-        .deck { position: relative; width: 600px; height: 400px; display: flex; justify-content: space-around; align-items: center; }
-        .intro-card { width: 240px; height: 340px; background: #fff; border: 6px solid #000; border-radius: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 15px 35px rgba(0,0,0,0.8); padding: 20px; text-align: center; transition: all 1.2s cubic-bezier(0.4, 0, 0.2, 1); }
-        .card-1 { transform: rotate(-8deg) translateY(20px); border-color: var(--ysu-red); }
-        .card-2 { transform: rotate(8deg) translateY(-20px); border-color: #000; }
-        .shuffle-anim .card-1 { animation: flyAwayLeft 2s forwards; }
-        .shuffle-anim .card-2 { animation: flyAwayRight 2s forwards; }
-        @keyframes flyAwayLeft { 0% { transform: rotate(-8deg) translateX(0); opacity: 1; } 100% { transform: rotate(-25deg) translateX(-1500px); opacity: 0; } }
-        @keyframes flyAwayRight { 0% { transform: rotate(8deg) translateX(0); opacity: 1; } 100% { transform: rotate(25deg) translateX(1500px); opacity: 0; } }
+        #top-banner { 
+            position: fixed; top: 0; left: 0; width: 100%; background: var(--ysu-red); 
+            color: white; text-align: center; padding: 10px 0; z-index: 2000; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5); border-bottom: 4px solid white; 
+            font-size: 1rem; 
+        }
         
-        #game-overlay { position: absolute; inset: 0; z-index: 10; display: flex; align-items: center; justify-content: center; pointer-events: none; perspective: 2000px; padding-top: 60px; }
-        #board { width: 86vmin; height: 86vmin; display: grid; grid-template-columns: repeat(5, 1fr); grid-template-rows: repeat(5, 1fr); gap: 15px; position: relative; pointer-events: auto; transform: rotateX(25deg); transform-style: preserve-3d; }
+        /* Intro Overlay Mobile Fix */
+        #intro-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 3000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+        #countdown-timer { color: white; font-size: 3rem; margin-bottom: 10px; text-shadow: 0 0 20px var(--ysu-red); }
+        
+        .deck { position: relative; width: 100%; max-width: 500px; height: 350px; display: flex; justify-content: center; align-items: center; gap: 10px; }
+        .intro-card { 
+            width: 45%; height: 300px; background: #fff; border: 4px solid #000; border-radius: 15px; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5); padding: 10px; text-align: center; 
+            transition: all 1.2s cubic-bezier(0.4, 0, 0.2, 1); font-size: 0.7rem;
+        }
+        .intro-card h2 { font-size: 0.9rem; margin: 5px 0; }
+        .intro-card span { font-size: 2.5rem !important; }
+
+        .card-1 { transform: rotate(-5deg); border-color: var(--ysu-red); }
+        .card-2 { transform: rotate(5deg); border-color: #000; }
+        
+        /* Game UI */
+        #game-overlay { position: absolute; inset: 0; z-index: 10; display: flex; align-items: center; justify-content: center; pointer-events: none; perspective: 2000px; }
+        
+        /* Responsive Board */
+        #board { 
+            width: 95vmin; height: 95vmin; display: grid; 
+            grid-template-columns: repeat(5, 1fr); grid-template-rows: repeat(5, 1fr); 
+            gap: 8px; position: relative; pointer-events: auto; 
+            transform: rotateX(20deg); transform-style: preserve-3d; 
+        }
+
         .prism-wrap { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; transition: transform 0.4s ease; }
-        .face { position: absolute; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 0.65rem; color: #fff; text-transform: uppercase; border: 1.5px solid rgba(255,255,255,0.4); backface-visibility: hidden; }
+        .face { position: absolute; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 0.5rem; color: #fff; text-transform: uppercase; border: 1px solid rgba(255,255,255,0.4); backface-visibility: hidden; }
         .f-top { width: 100%; height: 100%; transform: translateZ(var(--prism-h)); background: rgba(255,255,255,0.1); backdrop-filter: blur(4px); }
         .f-front { width: 100%; height: var(--prism-h); bottom: 0; left: 0; transform-origin: bottom; transform: rotateX(-90deg); filter: brightness(0.6); }
         .f-right { width: var(--prism-h); height: 100%; top: 0; right: 0; transform-origin: right; transform: rotateY(90deg); filter: brightness(0.4); }
 
+        /* Neighborhood Colors */
         .lyden-v .face { background-color: #FF69B4; }
         .cafaro-v .face { background-color: #0072CE; }
         .wick-v .face { background-color: #582C83; color: #FFFF00; font-weight: 900; }
@@ -38,19 +61,43 @@
         .kil-v .face { background-color: #E4002B; }
         .court-v .face { background-color: #78BE20; }
         .off-v .face { background-color: #111111; }
-        .campus-glow .f-top { animation: districtPulse 2.5s infinite alternate; border: 4px solid var(--ysu-gold); }
-        @keyframes districtPulse { from { box-shadow: 0 0 10px var(--ysu-gold); } to { box-shadow: 0 0 45px var(--ysu-gold), inset 0 0 15px #fff; } }
+        .corner-v .face { background-color: #111111; border: 2px solid #fff; }
 
-        #center-ui { position: fixed; top: 100px; right: 25px; width: 350px; z-index: 100; pointer-events: auto; }
-        .decision-card { background: #fff; border: 6px solid #000; padding: 25px; box-shadow: 10px 10px 0 var(--ysu-red); text-align: center; color: #000; }
-        #q-text { font-size: 1.1rem; margin-bottom: 20px; line-height: 1.3; }
-        .btn-action { background: #000; color: #fff; border: none; padding: 18px 12px; margin: 10px 0; cursor: pointer; font-family: 'Bungee'; font-size: 0.85rem; width: 100%; border-radius: 6px; line-height: 1.3; transition: 0.2s; }
-        .btn-action:hover { background: var(--ysu-red); }
+        /* Mobile Decision Card - Moved to Bottom */
+        #center-ui { 
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); 
+            width: 90%; max-width: 400px; z-index: 100; pointer-events: auto; 
+        }
+        .decision-card { background: #fff; border: 4px solid #000; padding: 15px; box-shadow: 6px 6px 0 var(--ysu-red); text-align: center; color: #000; }
+        #q-text { font-size: 0.9rem; margin-bottom: 15px; line-height: 1.2; }
+        .btn-action { background: #000; color: #fff; border: none; padding: 15px 10px; margin: 5px 0; cursor: pointer; font-family: 'Bungee'; font-size: 0.75rem; width: 100%; border-radius: 6px; line-height: 1.2; }
         
-        #player { position: absolute; width: 50px; height: 50px; background: var(--ysu-gold); border-radius: 50%; border: 4px solid #fff; z-index: 500; transition: all 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.275); display: flex; align-items: center; justify-content: center; font-size: 1.8rem; box-shadow: 0 10px 25px rgba(0,0,0,0.8); transform: translateZ(100px); }
-        #results-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 4000; flex-direction: column; align-items: center; justify-content: center; color: #fff; text-align: center; padding: 20px; }
-        .match-text { color: var(--ysu-red); font-weight: 900; font-size: 2.2rem; text-transform: uppercase; margin-top: 15px; }
-        .final-link { display: block; margin: 15px 0; color: var(--ysu-red); text-decoration: underline; font-size: 1rem; font-weight: bold; }
+        /* Player Piece Scaling */
+        #player { position: absolute; width: 40px; height: 40px; background: var(--ysu-gold); border-radius: 50%; border: 3px solid #fff; z-index: 500; transition: all 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.275); display: flex; align-items: center; justify-content: center; font-size: 1.4rem; box-shadow: 0 10px 25px rgba(0,0,0,0.8); transform: translateZ(100px); }
+
+        /* Result Overlay Mobile */
+        #results-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 4000; flex-direction: column; align-items: center; justify-content: center; color: #fff; text-align: center; padding: 15px; }
+        .result-box { background: #fff; color: #000; padding: 25px; border: 8px solid #000; width: 90%; max-width: 450px; border-radius: 20px; max-height: 85vh; overflow-y: auto; }
+        .match-text { color: var(--ysu-red); font-weight: 900; font-size: 1.5rem; text-transform: uppercase; margin-top: 15px; }
+        .final-link { display: block; margin: 15px 0; color: var(--ysu-red); text-decoration: underline; font-size: 0.9rem; font-weight: bold; }
+
+        /* Animation Keyframes */
+        .shuffle-anim .card-1 { animation: flyAwayLeft 1.5s forwards; }
+        .shuffle-anim .card-2 { animation: flyAwayRight 1.5s forwards; }
+        @keyframes flyAwayLeft { 0% { transform: rotate(-5deg) translateX(0); opacity: 1; } 100% { transform: rotate(-20deg) translateX(-1000px); opacity: 0; } }
+        @keyframes flyAwayRight { 0% { transform: rotate(5deg) translateX(0); opacity: 1; } 100% { transform: rotate(20deg) translateX(1000px); opacity: 0; } }
+        @keyframes districtPulse { from { box-shadow: 0 0 5px var(--ysu-gold); } to { box-shadow: 0 0 25px var(--ysu-gold); } }
+
+        /* Desktop Adjustments */
+        @media (min-width: 768px) {
+            #top-banner { font-size: 1.3rem; padding: 12px 0; }
+            #center-ui { top: 100px; right: 25px; bottom: auto; left: auto; transform: none; width: 350px; }
+            #q-text { font-size: 1.1rem; }
+            .btn-action { font-size: 0.85rem; }
+            .face { font-size: 0.65rem; }
+            #player { width: 50px; height: 50px; font-size: 1.8rem; }
+            .match-text { font-size: 2.2rem; }
+        }
     </style>
 </head>
 <body>
@@ -106,14 +153,14 @@
 </div>
 
 <div id="results-overlay">
-    <div style="background:#fff; color:#000; padding:45px; border:12px solid #000; max-width:550px; border-radius: 20px;">
-        <div id="p-icon" style="font-size: 5.5rem;"></div>
-        <h1 id="p-name" style="margin:10px 0; font-size: 1.8rem;"></h1>
-        <p id="res-body" style="font-size:1.1rem; line-height:1.4; color: #222; text-align: left;"></p>
+    <div class="result-box">
+        <div id="p-icon" style="font-size: 4rem;"></div>
+        <h1 id="p-name" style="margin:10px 0; font-size: 1.3rem;"></h1>
+        <p id="res-body" style="font-size:0.9rem; line-height:1.4; color: #222; text-align: left;"></p>
         <hr>
         <p class="match-text" id="housing-final"></p>
         <div id="link-area"></div>
-        <button onclick="location.reload()" style="padding:15px 30px; font-family:'Bungee'; background:#000; color:#fff; border:none; cursor:pointer; width:100%; margin-top: 20px; border-radius: 8px;">RESTART</button>
+        <button onclick="location.reload()" style="padding:15px 30px; font-family:'Bungee'; background:#000; color:#fff; border:none; cursor:pointer; width:100%; margin-top: 15px; border-radius: 8px;">RESTART</button>
     </div>
 </div>
 
@@ -199,8 +246,11 @@
 
     function movePiece(id) {
         const t = document.getElementById(id);
-        player.style.left = t.offsetLeft + (t.offsetWidth/2 - 25) + "px";
-        player.style.top = t.offsetTop + (t.offsetHeight/2 - 25) + "px";
+        const board = document.getElementById('board');
+        const rect = board.getBoundingClientRect();
+        
+        player.style.left = t.offsetLeft + (t.offsetWidth/2 - player.offsetWidth/2) + "px";
+        player.style.top = t.offsetTop + (t.offsetHeight/2 - player.offsetHeight/2) + "px";
     }
 
     function showResults() {
