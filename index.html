@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YSU Housing Tycoon: Geo-Dynamic Debug</title>
+    <title>YSU Housing Tycoon: Precision Feature</title>
     <link href="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css" rel="stylesheet" />
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Bungee&display=swap');
@@ -27,7 +27,7 @@
         #board { width: 86vmin; height: 86vmin; display: grid; grid-template-columns: repeat(5, 1fr); grid-template-rows: repeat(5, 1fr); gap: 15px; position: relative; pointer-events: auto; transform: rotateX(25deg); transform-style: preserve-3d; }
         .prism-wrap { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; transition: transform 0.4s ease; }
         .face { position: absolute; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 0.65rem; color: #fff; text-transform: uppercase; border: 1.5px solid rgba(255,255,255,0.4); backface-visibility: hidden; }
-        .f-top { width: 100%; height: 100%; transform: translateZ(var(--prism-h)); background: rgba(255,255,255,0.25); backdrop-filter: blur(10px); }
+        .f-top { width: 100%; height: 100%; transform: translateZ(var(--prism-h)); background: rgba(255,255,255,0.1); backdrop-filter: blur(4px); }
         .f-front { width: 100%; height: var(--prism-h); bottom: 0; left: 0; transform-origin: bottom; transform: rotateX(-90deg); filter: brightness(0.6); }
         .f-right { width: var(--prism-h); height: 100%; top: 0; right: 0; transform-origin: right; transform: rotateY(90deg); filter: brightness(0.4); }
 
@@ -41,12 +41,19 @@
         .corner-v .face { background-color: #111111; border: 2px solid #fff; }
 
         .campus-glow .f-top { box-shadow: 0 0 50px var(--ysu-gold), inset 0 0 25px #fff; border: 4px solid var(--ysu-gold); }
-        #center-ui { grid-area: 2 / 2 / 5 / 5; display: flex; align-items: center; justify-content: center; pointer-events: none; transform: translateZ(100px); }
-        .decision-card { background: #fff; border: 6px solid #000; padding: 25px; width: 85%; pointer-events: auto; box-shadow: 15px 15px 0 var(--ysu-red); text-align: center; color: #000; }
-        .btn-action { background: #000; color: #fff; border: none; padding: 14px; margin: 8px 0; cursor: pointer; font-family: 'Bungee'; font-size: 0.85rem; width: 100%; border-radius: 4px; }
+
+        /* Moved Decision Card to Top Right */
+        #center-ui { 
+            position: fixed; top: 80px; right: 20px; 
+            width: 280px; z-index: 100; pointer-events: auto; 
+        }
+        .decision-card { 
+            background: #fff; border: 5px solid #000; padding: 15px; 
+            box-shadow: 8px 8px 0 var(--ysu-red); text-align: center; color: #000; 
+        }
+        .btn-action { background: #000; color: #fff; border: none; padding: 12px; margin: 6px 0; cursor: pointer; font-family: 'Bungee'; font-size: 0.8rem; width: 100%; border-radius: 4px; }
         
-        #player { position: absolute; width: 50px; height: 50px; background: var(--ysu-gold); border-radius: 50%; border: 4px solid #fff; z-index: 500; transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); display: flex; align-items: center; justify-content: center; font-size: 1.8rem; box-shadow: 0 10px 25px rgba(0,0,0,0.8); transform: translateZ(110px); }
-        
+        #player { position: absolute; width: 50px; height: 50px; background: var(--ysu-gold); border-radius: 50%; border: 4px solid #fff; z-index: 500; transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); display: flex; align-items: center; justify-content: center; font-size: 1.8rem; box-shadow: 0 10px 25px rgba(0,0,0,0.8); transform: translateZ(100px); }
         #results-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 4000; flex-direction: column; align-items: center; justify-content: center; color: #fff; text-align: center; padding: 20px; }
         .match-text { color: var(--ysu-red); font-weight: 900; font-size: 2.2rem; text-transform: uppercase; margin-top: 15px; }
     </style>
@@ -95,14 +102,14 @@
         <div class="prism-wrap off-v" id="off5" style="grid-row:4; grid-column:1"><div class="face f-top">OFF-CAMPUS</div><div class="face f-front"></div><div class="face f-right"></div></div>
         <div class="prism-wrap off-v" id="off6" style="grid-row:3; grid-column:1"><div class="face f-top">OFF-CAMPUS</div><div class="face f-front"></div><div class="face f-right"></div></div>
         <div class="prism-wrap off-v" id="off7" style="grid-row:2; grid-column:1"><div class="face f-top">OFF-CAMPUS</div><div class="face f-front"></div><div class="face f-right"></div></div>
+    </div>
+</div>
 
-        <div id="center-ui">
-            <div class="decision-card">
-                <p id="q-text">Which atmosphere suits you best?</p>
-                <button class="btn-action" onclick="handleChoice('L')">ACTIVITIES</button>
-                <button class="btn-action" onclick="handleChoice('R')">PRIVACY</button>
-            </div>
-        </div>
+<div id="center-ui">
+    <div class="decision-card">
+        <p id="q-text">Which atmosphere suits you best?</p>
+        <button class="btn-action" onclick="handleChoice('L')">ACTIVITIES</button>
+        <button class="btn-action" onclick="handleChoice('R')">PRIVACY</button>
     </div>
 </div>
 
@@ -119,26 +126,16 @@
 
 <script src="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.js"></script>
 <script>
-    // UPDATED BUILD COORDS
+    // Exact building coordinates based on your calibration
     const bldgCoords = {
-        lyden: [-80.6482, 41.1044],
-        cafaro: [-80.6486, 41.1033],
-        wick: [-80.6480, 41.1018],
-        weller: [-80.6468, 41.1041],
-        kilcawley: [-80.6467, 41.1030],
-        courtyards: [-80.6450, 41.1062],
-        neutral: [-80.6475, 41.1045]
+        lyden: [-80.6483, 41.1042],
+        kilcawley: [-80.6465, 41.1028],
+        weller: [-80.6468, 41.1040],
+        wick: [-80.6480, 41.1020],
+        cafaro: [-80.6485, 41.1032],
+        courtyards: [-80.6450, 41.1060],
+        neutral: [-80.64692, 41.10676] // Your input coordinate
     };
-
-    // DEBUGGER: Press 'L' to log and alert current coordinates
-    window.addEventListener('keydown', (e) => {
-        if (e.key.toLowerCase() === 'l') {
-            const center = map.getCenter();
-            const logMsg = `Debug Coords: [${center.lng.toFixed(5)}, ${center.lat.toFixed(5)}]`;
-            console.log(logMsg);
-            alert(logMsg);
-        }
-    });
 
     let timeLeft = 5;
     const interval = setInterval(() => {
@@ -157,7 +154,7 @@
         container: 'map',
         style: 'mapbox://styles/ysu-hrl/cmfpr50qm00a401ry0uzb5b1q',
         center: bldgCoords.neutral,
-        zoom: 16.5, pitch: 65, bearing: -133.6, interactive: true
+        zoom: 16.5, pitch: 65, bearing: -133.6
     });
 
     async function loadJSON(url){ const r = await fetch(url); return r.json(); }
@@ -183,11 +180,10 @@
     const questions = [
         { q: "HOUSING VIBE?", L: "ACTIVITIES", R: "PRIVACY" },
         { q: "DINING CHOICE?", L: "ORDER/EAT", R: "COOK MEAL" },
-        { q: "STAY DURATION?", L: "SUMMERS HOME", R: "YEAR ROUND" },
+        { q: "STAY DURATION?", L: "YEAR ROUND", R: "SUMMERS HOME" },
         { q: "PAYMENT PLAN?", L: "ONE BILL", R: "MONTHLY" },
         { q: "SUPPORT?", L: "24/7 STAFF", R: "FIX IT MYSELF" },
-        { q: "CLEANING?", L: "ROOM ONLY", R: "ROOM + KITCHEN" },
-        { q: "CONTRACT?", L: "FLEX CONTRACT", R: "1-YEAR LEASE" }
+        { q: "CLEANING?", L: "ROOM ONLY", R: "ROOM + KITCHEN" }
     ];
 
     let step = 0; let scoreL = 0;
@@ -195,7 +191,27 @@
     const campusUnits = document.querySelectorAll('.campus');
 
     function mapSpan(loc) {
-        map.flyTo({ center: bldgCoords[loc] || bldgCoords.neutral, zoom: loc === 'neutral' ? 16.5 : 18.2, speed: 0.7 });
+        map.flyTo({ center: bldgCoords[loc], zoom: 18.2, speed: 0.7 });
+    }
+
+    function handleChoice(side) {
+        document.querySelectorAll('.prism-wrap').forEach(s => s.classList.remove('campus-glow'));
+        if(side === 'L') scoreL++;
+        
+        // Sequence to feature every building once
+        if (step === 0) { side === 'L' ? (movePiece('lyden'), glowCampus(), mapSpan('lyden')) : movePiece('off1'); } 
+        else if (step === 1) { side === 'L' ? (movePiece('kilcawley'), glowCampus(), mapSpan('kilcawley')) : movePiece('off2'); }
+        else if (step === 2) { side === 'L' ? (movePiece('weller'), glowCampus(), mapSpan('weller')) : movePiece('off3'); }
+        else if (step === 3) { side === 'L' ? (movePiece('wick'), glowCampus(), mapSpan('wick')) : movePiece('off4'); }
+        else if (step === 4) { side === 'L' ? (movePiece('cafaro'), glowCampus(), mapSpan('cafaro')) : movePiece('off5'); }
+        else if (step === 5) { side === 'L' ? (movePiece('courtyards'), glowCampus(), mapSpan('courtyards')) : movePiece('off6'); }
+        
+        if (step >= 5) { movePiece('finish'); setTimeout(showResults, 1000); return; }
+        
+        step++;
+        document.getElementById('q-text').innerText = questions[step].q;
+        document.querySelectorAll('.btn-action')[0].innerText = questions[step].L;
+        document.querySelectorAll('.btn-action')[1].innerText = questions[step].R;
     }
 
     function movePiece(id) {
@@ -204,42 +220,23 @@
         player.style.top = target.offsetTop + (target.offsetHeight/2 - 25) + "px";
     }
 
-    window.onload = () => movePiece('go');
-
-    function handleChoice(side) {
-        document.querySelectorAll('.prism-wrap').forEach(s => s.classList.remove('campus-glow'));
-        if(side === 'L') scoreL++;
-        if (step === 0) { side === 'L' ? (movePiece('lyden'), glowCampus(), mapSpan('lyden')) : (movePiece('off1'), mapSpan('neutral')); } 
-        else if (step === 1) { side === 'L' ? (movePiece('kilcawley'), glowCampus(), mapSpan('kilcawley')) : (movePiece('off2'), mapSpan('neutral')); }
-        else if (step === 2) { side === 'L' ? (movePiece('wick'), glowCampus(), mapSpan('wick')) : (movePiece('off3'), mapSpan('neutral')); }
-        else if (step === 3) { side === 'L' ? (movePiece('kilcawley'), glowCampus(), mapSpan('kilcawley')) : (movePiece('off4'), mapSpan('neutral')); }
-        else if (step === 4) { side === 'L' ? (movePiece('cafaro'), glowCampus(), mapSpan('cafaro')) : (movePiece('off5'), mapSpan('neutral')); }
-        else if (step === 5) { side === 'L' ? (movePiece('wick'), glowCampus(), mapSpan('wick')) : (movePiece('off6'), mapSpan('neutral')); }
-        else if (step === 6) { movePiece('finish'); setTimeout(showResults, 1000); return; }
-        step++;
-        document.getElementById('q-text').innerText = questions[step].q;
-        document.querySelectorAll('.btn-action')[0].innerText = questions[step].L;
-        document.querySelectorAll('.btn-action')[1].innerText = questions[step].R;
-    }
-
     function glowCampus() { campusUnits.forEach(u => u.classList.add('campus-glow')); }
 
     function showResults() {
         document.getElementById('results-overlay').style.display = 'flex';
         const pIcon = document.getElementById('p-icon');
         const pName = document.getElementById('p-name');
-        const body = document.getElementById('res-body');
         const hFinal = document.getElementById('housing-final');
-        if(scoreL >= 4) {
+        if(scoreL >= 3) {
             pIcon.innerText = "⚾"; pName.innerText = "STEVE HARRINGTON (Stranger Things)";
-            body.innerText = "You're the heart of the community! Like Steve, you thrive when you're part of a team, value looking out for your neighbors, and prefer an environment with built-in support systems.";
             hFinal.innerText = "YSU RESIDENCE HALLS";
         } else {
-            pIcon.innerText = "🎻"; pName.innerText = "WEDNESDAY ADDAMS (Wednesday)";
-            body.innerText = "You're a strategic individual! Like Wednesday, you prioritize autonomy and personal focus. You prefer a quiet, controlled space where you can manage your own path independently.";
+            pIcon.innerText = "🕷️"; pName.innerText = "WEDNESDAY ADDAMS (Wednesday)";
             hFinal.innerText = "OFF-CAMPUS LIVING";
         }
     }
+
+    window.onload = () => movePiece('go');
 </script>
 </body>
 </html>
