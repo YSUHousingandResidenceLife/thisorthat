@@ -2,55 +2,35 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>YSU Housing Tycoon</title>
     <link href="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css" rel="stylesheet" />
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Bungee&display=swap');
-        :root { --ysu-red: #E4002B; --ysu-gold: #FFD700; --prism-h: 35px; }
-        
-        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Bungee', cursive; overflow: hidden; background: #000; touch-action: manipulation; }
+        :root { --ysu-red: #E4002B; --ysu-gold: #FFD700; --prism-h: 50px; }
+        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Bungee', cursive; overflow: hidden; background: #000; }
         #map { position: absolute; inset: 0; z-index: 1; }
+        #top-banner { position: fixed; top: 0; left: 0; width: 100%; background: var(--ysu-red); color: white; text-align: center; padding: 12px 0; z-index: 2000; box-shadow: 0 4px 15px rgba(0,0,0,0.5); border-bottom: 4px solid white; font-size: 1.3rem; }
         
-        #top-banner { 
-            position: fixed; top: 0; left: 0; width: 100%; background: var(--ysu-red); 
-            color: white; text-align: center; padding: 8px 0; z-index: 2000; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5); border-bottom: 3px solid white; 
-            font-size: 0.9rem; 
-        }
+        #intro-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 3000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        #countdown-timer { color: white; font-size: 4rem; margin-bottom: 20px; text-shadow: 0 0 20px var(--ysu-red); }
+        .deck { position: relative; width: 600px; height: 400px; display: flex; justify-content: space-around; align-items: center; }
+        .intro-card { width: 240px; height: 340px; background: #fff; border: 6px solid #000; border-radius: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 15px 35px rgba(0,0,0,0.8); padding: 20px; text-align: center; transition: all 1.2s cubic-bezier(0.4, 0, 0.2, 1); }
+        .card-1 { transform: rotate(-8deg) translateY(20px); border-color: var(--ysu-red); }
+        .card-2 { transform: rotate(8deg) translateY(-20px); border-color: #000; }
+        .shuffle-anim .card-1 { animation: flyAwayLeft 2s forwards; }
+        .shuffle-anim .card-2 { animation: flyAwayRight 2s forwards; }
+        @keyframes flyAwayLeft { 0% { transform: rotate(-8deg) translateX(0); opacity: 1; } 100% { transform: rotate(-25deg) translateX(-1500px); opacity: 0; } }
+        @keyframes flyAwayRight { 0% { transform: rotate(8deg) translateX(0); opacity: 1; } 100% { transform: rotate(25deg) translateX(1500px); opacity: 0; } }
         
-        /* Intro Overlay */
-        #intro-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 3000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px; }
-        #countdown-timer { color: white; font-size: 2.5rem; margin-bottom: 5px; text-shadow: 0 0 15px var(--ysu-red); }
-        
-        .deck { position: relative; width: 100%; height: 300px; display: flex; justify-content: center; align-items: center; gap: 8px; }
-        .intro-card { 
-            width: 46%; height: 260px; background: #fff; border: 4px solid #000; border-radius: 12px; 
-            display: flex; flex-direction: column; align-items: center; justify-content: center; 
-            padding: 8px; text-align: center; font-size: 0.6rem;
-        }
-        .intro-card h2 { font-size: 0.8rem; margin: 3px 0; }
-        .intro-card span { font-size: 2rem !important; }
-
-        /* Game Board Scaling */
-        #game-overlay { position: absolute; inset: 0; z-index: 10; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; pointer-events: none; padding-top: 60px; }
-        
-        #board { 
-            width: 90vw; height: 90vw; 
-            max-width: 450px; max-height: 450px;
-            display: grid; grid-template-columns: repeat(5, 1fr); grid-template-rows: repeat(5, 1fr); 
-            gap: 6px; position: relative; pointer-events: auto; 
-            transform: rotateX(15deg); transform-style: preserve-3d; 
-            margin-top: 10px;
-        }
-
-        .prism-wrap { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; }
-        .face { position: absolute; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 0.45rem; color: #fff; text-transform: uppercase; border: 1px solid rgba(255,255,255,0.3); backface-visibility: hidden; }
-        .f-top { width: 100%; height: 100%; transform: translateZ(var(--prism-h)); background: rgba(255,255,255,0.1); backdrop-filter: blur(2px); }
+        #game-overlay { position: absolute; inset: 0; z-index: 10; display: flex; align-items: center; justify-content: center; pointer-events: none; perspective: 2000px; padding-top: 60px; }
+        #board { width: 86vmin; height: 86vmin; display: grid; grid-template-columns: repeat(5, 1fr); grid-template-rows: repeat(5, 1fr); gap: 15px; position: relative; pointer-events: auto; transform: rotateX(25deg); transform-style: preserve-3d; }
+        .prism-wrap { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; transition: transform 0.4s ease; }
+        .face { position: absolute; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 0.65rem; color: #fff; text-transform: uppercase; border: 1.5px solid rgba(255,255,255,0.4); backface-visibility: hidden; }
+        .f-top { width: 100%; height: 100%; transform: translateZ(var(--prism-h)); background: rgba(255,255,255,0.1); backdrop-filter: blur(4px); }
         .f-front { width: 100%; height: var(--prism-h); bottom: 0; left: 0; transform-origin: bottom; transform: rotateX(-90deg); filter: brightness(0.6); }
         .f-right { width: var(--prism-h); height: 100%; top: 0; right: 0; transform-origin: right; transform: rotateY(90deg); filter: brightness(0.4); }
 
-        /* Neighborhood Colors */
         .lyden-v .face { background-color: #FF69B4; }
         .cafaro-v .face { background-color: #0072CE; }
         .wick-v .face { background-color: #582C83; color: #FFFF00; font-weight: 900; }
@@ -60,32 +40,33 @@
         .off-v .face { background-color: #111111; }
         .corner-v .face { background-color: #111111; border: 2px solid #fff; }
 
-        /* Decision Card Positioning */
-        #center-ui { 
-            position: fixed; bottom: 15px; left: 50%; transform: translateX(-50%); 
-            width: 92%; max-width: 380px; z-index: 100; pointer-events: auto; 
-        }
-        .decision-card { background: #fff; border: 4px solid #000; padding: 12px; box-shadow: 5px 5px 0 var(--ysu-red); text-align: center; color: #000; }
-        #q-text { font-size: 0.85rem; margin-bottom: 10px; line-height: 1.1; }
-        .btn-action { background: #000; color: #fff; border: none; padding: 14px 8px; margin: 4px 0; cursor: pointer; font-family: 'Bungee'; font-size: 0.7rem; width: 100%; border-radius: 5px; line-height: 1.1; }
+        .campus-glow .f-top { animation: districtPulse 2.5s infinite alternate; border: 4px solid var(--ysu-gold); }
+        @keyframes districtPulse { from { box-shadow: 0 0 10px var(--ysu-gold); } to { box-shadow: 0 0 45px var(--ysu-gold), inset 0 0 15px #fff; } }
+
+        #center-ui { position: fixed; top: 100px; right: 25px; width: 350px; z-index: 100; pointer-events: auto; }
+        .decision-card { background: #fff; border: 6px solid #000; padding: 25px; box-shadow: 10px 10px 0 var(--ysu-red); text-align: center; color: #000; }
+        #q-text { font-size: 1.1rem; margin-bottom: 20px; line-height: 1.3; }
+        .btn-action { background: #000; color: #fff; border: none; padding: 18px 12px; margin: 10px 0; cursor: pointer; font-family: 'Bungee'; font-size: 0.85rem; width: 100%; border-radius: 6px; line-height: 1.3; transition: 0.2s; }
+        .btn-action:hover { background: var(--ysu-red); }
         
-        #player { position: absolute; width: 35px; height: 35px; background: var(--ysu-gold); border-radius: 50%; border: 3px solid #fff; z-index: 500; transition: all 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.275); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; transform: translateZ(60px); }
+        #player { position: absolute; width: 50px; height: 50px; background: var(--ysu-gold); border-radius: 50%; border: 4px solid #fff; z-index: 500; transition: all 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.275); display: flex; align-items: center; justify-content: center; font-size: 1.8rem; box-shadow: 0 10px 25px rgba(0,0,0,0.8); transform: translateZ(100px); }
+        #results-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 4000; flex-direction: column; align-items: center; justify-content: center; color: #fff; text-align: center; padding: 20px; }
+        .match-text { color: var(--ysu-red); font-weight: 900; font-size: 2.2rem; text-transform: uppercase; margin-top: 15px; }
+        .final-link { display: block; margin: 15px 0; color: var(--ysu-red); text-decoration: underline; font-size: 1rem; font-weight: bold; }
 
-        #results-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 4000; flex-direction: column; align-items: center; justify-content: center; padding: 10px; }
-        .result-box { background: #fff; color: #000; padding: 20px; border: 6px solid #000; width: 85%; max-width: 400px; border-radius: 15px; max-height: 90vh; overflow-y: auto; text-align: center; }
-        .match-text { color: var(--ysu-red); font-weight: 900; font-size: 1.3rem; margin-top: 10px; }
-        .final-link { display: block; margin: 12px 0; color: var(--ysu-red); text-decoration: underline; font-size: 0.85rem; font-weight: bold; }
-
-        @keyframes flyAwayLeft { 0% { transform: rotate(-5deg) translateX(0); opacity: 1; } 100% { transform: rotate(-20deg) translateX(-800px); opacity: 0; } }
-        @keyframes flyAwayRight { 0% { transform: rotate(5deg) translateX(0); opacity: 1; } 100% { transform: rotate(20deg) translateX(800px); opacity: 0; } }
-
-        @media (min-width: 768px) {
-            #board { width: 80vmin; height: 80vmin; max-width: none; max-height: none; transform: rotateX(20deg); }
-            #center-ui { top: 100px; right: 25px; bottom: auto; left: auto; transform: none; width: 350px; }
-            #q-text { font-size: 1.1rem; }
-            .btn-action { font-size: 0.85rem; padding: 18px 12px; }
-            .result-box { padding: 30px; }
-            .match-text { font-size: 2rem; }
+        /* MOBILE ONLY STYLES (Applies to phones only) */
+        @media (max-width: 768px) {
+            #board { width: 95vw; height: 95vw; gap: 8px; transform: rotateX(15deg); }
+            :root { --prism-h: 30px; }
+            #center-ui { top: auto; bottom: 20px; right: auto; left: 50%; transform: translateX(-50%); width: 92%; max-width: 400px; }
+            .decision-card { padding: 15px; }
+            #q-text { font-size: 0.95rem; margin-bottom: 10px; }
+            .btn-action { padding: 12px 8px; font-size: 0.75rem; margin: 5px 0; }
+            #player { width: 40px; height: 40px; font-size: 1.4rem; }
+            #top-banner { font-size: 1rem; }
+            .deck { width: 100vw; }
+            .intro-card { width: 42vw; height: 280px; padding: 10px; font-size: 0.65rem; }
+            .intro-card h2 { font-size: 0.85rem; }
         }
     </style>
 </head>
@@ -99,12 +80,12 @@
         <div class="intro-card card-1">
             <h2 style="color:var(--ysu-red)">TEAM PLAYER?</h2>
             <p>Are you the<br><strong>SOCIAL NAVIGATOR?</strong></p>
-            <span>⚾</span>
+            <span style="font-size: 3.5rem;">⚾</span>
         </div>
         <div class="intro-card card-2">
             <h2>LONE WOLF?</h2>
             <p>Or the<br><strong>INDEPENDENT SOUL?</strong></p>
-            <span>🕷️</span>
+            <span style="font-size: 3.5rem;">🕷️</span>
         </div>
     </div>
 </div>
@@ -142,14 +123,14 @@
 </div>
 
 <div id="results-overlay">
-    <div class="result-box">
-        <div id="p-icon" style="font-size: 3rem;"></div>
-        <h1 id="p-name" style="margin:5px 0; font-size: 1.2rem;"></h1>
-        <p id="res-body" style="font-size:0.85rem; line-height:1.3; color: #222; text-align: left;"></p>
+    <div style="background:#fff; color:#000; padding:45px; border:12px solid #000; max-width:550px; border-radius: 20px;">
+        <div id="p-icon" style="font-size: 5.5rem;"></div>
+        <h1 id="p-name" style="margin:10px 0; font-size: 1.8rem;"></h1>
+        <p id="res-body" style="font-size:1.1rem; line-height:1.4; color: #222; text-align: left;"></p>
         <hr>
         <p class="match-text" id="housing-final"></p>
         <div id="link-area"></div>
-        <button onclick="location.reload()" style="padding:12px 25px; font-family:'Bungee'; background:#000; color:#fff; border:none; border-radius: 6px; margin-top: 10px;">RESTART</button>
+        <button onclick="location.reload()" style="padding:15px 30px; font-family:'Bungee'; background:#000; color:#fff; border:none; cursor:pointer; width:100%; margin-top: 20px; border-radius: 8px;">RESTART</button>
     </div>
 </div>
 
@@ -166,6 +147,14 @@
         neutral: {center: [-80.64692, 41.10676], zoom: 16.0, pitch: 40, bearing: -133}
     };
 
+    window.addEventListener('keydown', (e) => {
+        if (e.key.toLowerCase() === 'l') {
+            const c = map.getCenter(); const z = map.getZoom(); const p = map.getPitch(); const b = map.getBearing();
+            const msg = `center: [${c.lng.toFixed(5)}, ${c.lat.toFixed(5)}], zoom: ${z.toFixed(1)}, pitch: ${p.toFixed(0)}, bearing: ${b.toFixed(0)}`;
+            console.log(msg); alert(msg);
+        }
+    });
+
     let timeLeft = 5;
     const interval = setInterval(() => {
         timeLeft--;
@@ -173,10 +162,8 @@
         if (timeLeft <= 0) {
             clearInterval(interval);
             document.getElementById('countdown-timer').style.display = 'none';
-            document.querySelector('.deck').style.animation = 'none';
-            document.querySelector('.card-1').style.animation = 'flyAwayLeft 1.5s forwards';
-            document.querySelector('.card-2').style.animation = 'flyAwayRight 1.5s forwards';
-            setTimeout(() => { document.getElementById('intro-overlay').style.display = 'none'; }, 1500);
+            document.getElementById('deck-container').classList.add('shuffle-anim');
+            setTimeout(() => { document.getElementById('intro-overlay').style.display = 'none'; }, 2000);
         }
     }, 1000);
 
@@ -217,27 +204,25 @@
     updateQuestion();
 
     function mapSpan(loc) { map.flyTo({ ...bldgCoords[loc], speed: 0.6 }); }
+    function glowDistrict() { campusUnits.forEach(u => u.classList.add('campus-glow')); }
 
     function handleChoice(side) {
+        document.querySelectorAll('.prism-wrap').forEach(s => s.classList.remove('campus-glow'));
         if(side === 'L') scoreL++;
-        
-        if (step === 0) { side === 'L' ? (movePiece('lyden'), mapSpan('lyden')) : (movePiece('off1'), mapSpan('offcampus')); } 
-        else if (step === 1) { side === 'L' ? (movePiece('kilcawley'), mapSpan('kilcawley')) : (movePiece('off2'), mapSpan('offcampus')); }
-        else if (step === 2) { side === 'L' ? (movePiece('weller'), mapSpan('weller')) : (movePiece('off3'), mapSpan('offcampus')); }
-        else if (step === 3) { side === 'L' ? (movePiece('kilcawley'), mapSpan('kilcawley')) : (movePiece('off4'), mapSpan('offcampus')); }
-        else if (step === 4) { side === 'L' ? (movePiece('cafaro'), mapSpan('cafaro')) : (movePiece('off5'), mapSpan('offcampus')); }
-        else if (step === 5) { side === 'L' ? (movePiece('wick'), mapSpan('wick')) : (movePiece('off6'), mapSpan('offcampus')); }
-        else if (step === 6) { side === 'L' ? (movePiece('courtyards'), mapSpan('courtyards')) : (movePiece('off7'), mapSpan('offcampus')); movePiece('finish'); setTimeout(showResults, 3500); return; }
-        
-        step++;
-        updateQuestion();
+        if (step === 0) { side === 'L' ? (movePiece('lyden'), glowDistrict(), mapSpan('lyden')) : (movePiece('off1'), mapSpan('offcampus')); } 
+        else if (step === 1) { side === 'L' ? (movePiece('kilcawley'), glowDistrict(), mapSpan('kilcawley')) : (movePiece('off2'), mapSpan('offcampus')); }
+        else if (step === 2) { side === 'L' ? (movePiece('weller'), glowDistrict(), mapSpan('weller')) : (movePiece('off3'), mapSpan('offcampus')); }
+        else if (step === 3) { side === 'L' ? (movePiece('kilcawley'), glowDistrict(), mapSpan('kilcawley')) : (movePiece('off4'), mapSpan('offcampus')); }
+        else if (step === 4) { side === 'L' ? (movePiece('cafaro'), glowDistrict(), mapSpan('cafaro')) : (movePiece('off5'), mapSpan('offcampus')); }
+        else if (step === 5) { side === 'L' ? (movePiece('wick'), glowDistrict(), mapSpan('wick')) : (movePiece('off6'), mapSpan('offcampus')); }
+        else if (step === 6) { side === 'L' ? (movePiece('courtyards'), glowDistrict(), mapSpan('courtyards')) : (movePiece('off7'), mapSpan('offcampus')); movePiece('finish'); setTimeout(showResults, 3500); return; }
+        step++; updateQuestion();
     }
 
     function movePiece(id) {
         const t = document.getElementById(id);
-        const b = document.getElementById('board');
-        player.style.left = t.offsetLeft + (t.offsetWidth/2 - player.offsetWidth/2) + "px";
-        player.style.top = t.offsetTop + (t.offsetHeight/2 - player.offsetHeight/2) + "px";
+        player.style.left = t.offsetLeft + (t.offsetWidth/2 - 25) + "px";
+        player.style.top = t.offsetTop + (t.offsetHeight/2 - 25) + "px";
     }
 
     function showResults() {
