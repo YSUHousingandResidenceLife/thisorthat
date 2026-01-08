@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YSU Housing Tycoon: Debug & Feature</title>
+    <title>YSU Housing Tycoon: Calibrated</title>
     <link href="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css" rel="stylesheet" />
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Bungee&display=swap');
@@ -44,7 +44,7 @@
 
         #center-ui { position: fixed; top: 80px; right: 20px; width: 280px; z-index: 100; pointer-events: auto; }
         .decision-card { background: #fff; border: 5px solid #000; padding: 15px; box-shadow: 8px 8px 0 var(--ysu-red); text-align: center; color: #000; }
-        .btn-action { background: #000; color: #fff; border: none; padding: 12px; margin: 6px 0; cursor: pointer; font-family: 'Bungee'; font-size: 0.8rem; width: 100%; border-radius: 4px; }
+        .btn-action { background: #000; color: #fff; border: none; padding: 12px; margin: 8px 0; cursor: pointer; font-family: 'Bungee'; font-size: 0.8rem; width: 100%; border-radius: 4px; }
         
         #player { position: absolute; width: 50px; height: 50px; background: var(--ysu-gold); border-radius: 50%; border: 4px solid #fff; z-index: 500; transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); display: flex; align-items: center; justify-content: center; font-size: 1.8rem; box-shadow: 0 10px 25px rgba(0,0,0,0.8); transform: translateZ(100px); }
         #results-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 4000; flex-direction: column; align-items: center; justify-content: center; color: #fff; text-align: center; padding: 20px; }
@@ -80,11 +80,11 @@
         <div class="prism-wrap lyden-v campus" id="lyden"><div class="face f-top">LYDEN</div><div class="face f-front"></div><div class="face f-right"></div></div>
         <div class="prism-wrap cafaro-v campus" id="cafaro"><div class="face f-top">CAFARO</div><div class="face f-front"></div><div class="face f-right"></div></div>
         <div class="prism-wrap wick-v campus" id="wick"><div class="face f-top">WICK</div><div class="face f-front"></div><div class="face f-right"></div></div>
-        <div class="prism-wrap corner-v" id="parking"><div class="face f-top">WIFI</div><div class="face f-front"></div><div class="face f-right"></div></div>
+        <div class="prism-wrap corner-v" id="wifi"><div class="face f-top">WIFI</div><div class="face f-front"></div><div class="face f-right"></div></div>
         
         <div class="prism-wrap weller-v campus" id="weller" style="grid-row:2; grid-column:5"><div class="face f-top">WELLER</div><div class="face f-front"></div><div class="face f-right"></div></div>
         <div class="prism-wrap kil-v campus" id="kilcawley" style="grid-row:3; grid-column:5"><div class="face f-top">KILCAWLEY</div><div class="face f-front"></div><div class="face f-right"></div></div>
-        <div class="prism-wrap court-v" id="courtyards" style="grid-row:4; grid-column:5"><div class="face f-top">COURTYARDS</div><div class="face f-front"></div><div class="face f-right"></div></div>
+        <div class="prism-wrap court-v campus" id="courtyards" style="grid-row:4; grid-column:5"><div class="face f-top">COURTYARDS</div><div class="face f-front"></div><div class="face f-right"></div></div>
         <div class="prism-wrap corner-v" id="finish" style="grid-row:5; grid-column:5"><div class="face f-top">FINISH</div><div class="face f-front"></div><div class="face f-right"></div></div>
         
         <div class="prism-wrap off-v" id="off1" style="grid-row:5; grid-column:4"><div class="face f-top">OFF-CAMPUS</div><div class="face f-front"></div><div class="face f-right"></div></div>
@@ -119,13 +119,15 @@
 
 <script src="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.js"></script>
 <script>
+    // Precision Building Coordinates
     const bldgCoords = {
-        lyden: [-80.6483, 41.1042],
-        kilcawley: [-80.6465, 41.1028],
-        weller: [-80.6468, 41.1040],
-        wick: [-80.6480, 41.1020],
-        cafaro: [-80.6485, 41.1032],
-        courtyards: [-80.6450, 41.1060],
+        lyden: [-80.64820, 41.11039],
+        cafaro: [-80.64820, 41.11039], // Shared with Lyden as requested
+        kilcawley: [-80.64966, 41.10554],
+        weller: [-80.64598, 41.10864],
+        wick: [-80.64250, 41.10852],
+        courtyards: [-80.64318, 41.10506],
+        offcampus: [-80.65450, 41.10579],
         neutral: [-80.64692, 41.10676]
     };
 
@@ -200,13 +202,13 @@
         document.querySelectorAll('.prism-wrap').forEach(s => s.classList.remove('campus-glow'));
         if(side === 'L') scoreL++;
         
-        // Featured Sequence
-        if (step === 0) { side === 'L' ? (movePiece('lyden'), glowCampus(), mapSpan('lyden')) : movePiece('off1'); } 
-        else if (step === 1) { side === 'L' ? (movePiece('kilcawley'), glowCampus(), mapSpan('kilcawley')) : movePiece('off2'); }
-        else if (step === 2) { side === 'L' ? (movePiece('weller'), glowCampus(), mapSpan('weller')) : movePiece('off3'); }
-        else if (step === 3) { side === 'L' ? (movePiece('wick'), glowCampus(), mapSpan('wick')) : movePiece('off4'); }
-        else if (step === 4) { side === 'L' ? (movePiece('cafaro'), glowCampus(), mapSpan('cafaro')) : movePiece('off5'); }
-        else if (step === 5) { side === 'L' ? (movePiece('courtyards'), glowCampus(), mapSpan('courtyards')) : movePiece('off6'); }
+        // Featured Sequence with Provided Coordinates
+        if (step === 0) { side === 'L' ? (movePiece('lyden'), glowCampus(), mapSpan('lyden')) : (movePiece('off1'), mapSpan('offcampus')); } 
+        else if (step === 1) { side === 'L' ? (movePiece('kilcawley'), glowCampus(), mapSpan('kilcawley')) : (movePiece('off2'), mapSpan('offcampus')); }
+        else if (step === 2) { side === 'L' ? (movePiece('weller'), glowCampus(), mapSpan('weller')) : (movePiece('off3'), mapSpan('offcampus')); }
+        else if (step === 3) { side === 'L' ? (movePiece('wick'), glowCampus(), mapSpan('wick')) : (movePiece('off4'), mapSpan('offcampus')); }
+        else if (step === 4) { side === 'L' ? (movePiece('cafaro'), glowCampus(), mapSpan('cafaro')) : (movePiece('off5'), mapSpan('offcampus')); }
+        else if (step === 5) { side === 'L' ? (movePiece('courtyards'), glowCampus(), mapSpan('courtyards')) : (movePiece('off6'), mapSpan('offcampus')); }
         
         if (step >= 5) { movePiece('finish'); setTimeout(showResults, 1000); return; }
         
