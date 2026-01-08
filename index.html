@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YSU Housing Tycoon: Precision Feature</title>
+    <title>YSU Housing Tycoon: Debug & Feature</title>
     <link href="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css" rel="stylesheet" />
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Bungee&display=swap');
@@ -42,15 +42,8 @@
 
         .campus-glow .f-top { box-shadow: 0 0 50px var(--ysu-gold), inset 0 0 25px #fff; border: 4px solid var(--ysu-gold); }
 
-        /* Moved Decision Card to Top Right */
-        #center-ui { 
-            position: fixed; top: 80px; right: 20px; 
-            width: 280px; z-index: 100; pointer-events: auto; 
-        }
-        .decision-card { 
-            background: #fff; border: 5px solid #000; padding: 15px; 
-            box-shadow: 8px 8px 0 var(--ysu-red); text-align: center; color: #000; 
-        }
+        #center-ui { position: fixed; top: 80px; right: 20px; width: 280px; z-index: 100; pointer-events: auto; }
+        .decision-card { background: #fff; border: 5px solid #000; padding: 15px; box-shadow: 8px 8px 0 var(--ysu-red); text-align: center; color: #000; }
         .btn-action { background: #000; color: #fff; border: none; padding: 12px; margin: 6px 0; cursor: pointer; font-family: 'Bungee'; font-size: 0.8rem; width: 100%; border-radius: 4px; }
         
         #player { position: absolute; width: 50px; height: 50px; background: var(--ysu-gold); border-radius: 50%; border: 4px solid #fff; z-index: 500; transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); display: flex; align-items: center; justify-content: center; font-size: 1.8rem; box-shadow: 0 10px 25px rgba(0,0,0,0.8); transform: translateZ(100px); }
@@ -126,7 +119,6 @@
 
 <script src="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.js"></script>
 <script>
-    // Exact building coordinates based on your calibration
     const bldgCoords = {
         lyden: [-80.6483, 41.1042],
         kilcawley: [-80.6465, 41.1028],
@@ -134,8 +126,18 @@
         wick: [-80.6480, 41.1020],
         cafaro: [-80.6485, 41.1032],
         courtyards: [-80.6450, 41.1060],
-        neutral: [-80.64692, 41.10676] // Your input coordinate
+        neutral: [-80.64692, 41.10676]
     };
+
+    // DEBUG CONSOLE: PRESS 'L' TO CAPTURE COORDINATES
+    window.addEventListener('keydown', (e) => {
+        if (e.key.toLowerCase() === 'l') {
+            const center = map.getCenter();
+            const logMsg = `Debug Coords: [${center.lng.toFixed(5)}, ${center.lat.toFixed(5)}]`;
+            console.log(logMsg);
+            alert(logMsg);
+        }
+    });
 
     let timeLeft = 5;
     const interval = setInterval(() => {
@@ -198,7 +200,7 @@
         document.querySelectorAll('.prism-wrap').forEach(s => s.classList.remove('campus-glow'));
         if(side === 'L') scoreL++;
         
-        // Sequence to feature every building once
+        // Featured Sequence
         if (step === 0) { side === 'L' ? (movePiece('lyden'), glowCampus(), mapSpan('lyden')) : movePiece('off1'); } 
         else if (step === 1) { side === 'L' ? (movePiece('kilcawley'), glowCampus(), mapSpan('kilcawley')) : movePiece('off2'); }
         else if (step === 2) { side === 'L' ? (movePiece('weller'), glowCampus(), mapSpan('weller')) : movePiece('off3'); }
