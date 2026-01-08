@@ -55,7 +55,8 @@
         .final-link { display: block; margin: 15px 0; color: var(--ysu-red); text-decoration: underline; font-size: 1rem; font-weight: bold; }
 
         @media (max-width: 768px) {
-            #board { width: 95vw; height: 95vw; gap: 8px; transform: rotateX(15deg); }
+            #game-overlay { flex-direction: column; justify-content: flex-start; padding-top: 80px; }
+            #board { width: 92vw; height: 92vw; gap: 8px; transform: rotateX(15deg); margin-top: 10px; }
             :root { --prism-h: 30px; }
             #center-ui { top: auto; bottom: 20px; right: auto; left: 50%; transform: translateX(-50%); width: 92%; max-width: 400px; }
             .decision-card { padding: 15px; }
@@ -194,13 +195,18 @@
     }
     updateQuestion();
 
-    // MOBILE ZOOM OFFSET LOGIC
     function mapSpan(loc) { 
         const isMobile = window.innerWidth <= 768;
         const config = { ...bldgCoords[loc] };
+        
+        // Offset for Mobile Vertical Stacking
         if (isMobile && loc !== 'neutral') {
-            config.zoom = config.zoom - 1.2; // Back out 1.2 levels for mobile
+            config.zoom = config.zoom - 1.2; 
+            // Pushes the map center point slightly "up" on the phone screen
+            // to align with the board now sitting at the top
+            config.center = [config.center[0], config.center[1] - 0.0005]; 
         }
+        
         map.flyTo({ ...config, speed: 0.6 }); 
     }
 
