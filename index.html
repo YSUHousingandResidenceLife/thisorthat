@@ -1,29 +1,42 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>This or That — Housing Edition (Editor)</title>
+<meta charset="utf-8">
+<title>This or That — Housing Edition</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
-<link href="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css" rel="stylesheet" />
-<link href="https://fonts.googleapis.com/css2?family=Bungee&display=swap" rel="stylesheet" />
+<link href="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bungee&display=swap" rel="stylesheet">
+
+<!-- 🔑 IMPORT MAP (REQUIRED FOR GITHUB PAGES) -->
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.161.0/examples/jsm/"
+  }
+}
+</script>
 
 <style>
-html,body{height:100%;margin:0}
+html,body{
+  margin:0;
+  height:100%;
+  overflow:hidden;
+  font-family:'Bungee',cursive;
+}
 #map{position:absolute;inset:0}
 
-/* ===== HUD ===== */
+/* HUD */
 #hud{
   position:absolute;
   bottom:28px;
   left:50%;
   transform:translateX(-50%);
-  z-index:20;
+  z-index:10;
   width:92%;
   max-width:900px;
-  font-family:'Bungee',system-ui;
 }
-
 .title{
   background:linear-gradient(90deg,#22c55e,#06b6d4,#a855f7);
   color:white;
@@ -32,10 +45,8 @@ html,body{height:100%;margin:0}
   border:6px solid #000;
   text-align:center;
   font-size:1.6rem;
-  box-shadow:0 10px 30px rgba(0,0,0,.5);
   margin-bottom:14px;
 }
-
 .question{
   background:#fde047;
   border:6px solid #000;
@@ -45,12 +56,10 @@ html,body{height:100%;margin:0}
   font-size:1.8rem;
   margin-bottom:16px;
 }
-
 .answers{
   display:flex;
   gap:18px;
 }
-
 .answer{
   flex:1;
   padding:26px 20px;
@@ -59,49 +68,13 @@ html,body{height:100%;margin:0}
   cursor:pointer;
   text-align:center;
   font-size:1.2rem;
-  text-transform:uppercase;
-  transition:.15s;
   box-shadow:0 10px 0 #000;
+  transition:.15s;
 }
-
-.answer.left{
-  background:#22c55e;
-  color:#052e16;
-}
-.answer.right{
-  background:#ef4444;
-  color:#450a0a;
-}
-
-.answer:hover{
-  transform:translateY(-6px);
-  box-shadow:0 16px 0 #000;
-}
-.answer:active{
-  transform:translateY(4px);
-  box-shadow:0 6px 0 #000;
-}
-
-/* ===== EDIT PANEL ===== */
-.panel{
-  position:absolute;
-  top:12px;
-  left:12px;
-  background:rgba(255,255,255,.92);
-  backdrop-filter:blur(4px);
-  border-radius:14px;
-  box-shadow:0 6px 18px rgba(0,0,0,.15);
-  padding:10px 12px;
-  font:14px/1.3 system-ui;
-  z-index:21;
-}
-.buttons{display:flex;gap:8px;flex-wrap:wrap}
-button{
-  border:none;cursor:pointer;padding:8px 10px;
-  border-radius:10px;background:#111;color:#fff;font-weight:700
-}
-button.ghost{background:#f2f2f2;color:#111}
-button.secondary{background:#E4002B}
+.answer.left{background:#22c55e;color:#052e16}
+.answer.right{background:#ef4444;color:#450a0a}
+.answer:hover{transform:translateY(-6px);box-shadow:0 16px 0 #000}
+.answer:active{transform:translateY(4px);box-shadow:0 6px 0 #000}
 </style>
 </head>
 
@@ -109,7 +82,6 @@ button.secondary{background:#E4002B}
 
 <div id="map"></div>
 
-<!-- HUD -->
 <div id="hud">
   <div class="title">THIS OR THAT — HOUSING EDITION</div>
   <div class="question" id="qText"></div>
@@ -119,18 +91,14 @@ button.secondary{background:#E4002B}
   </div>
 </div>
 
-<!-- PANEL -->
-<div class="panel">
-  <div class="buttons">
-    <button class="ghost" onclick="undo()">Undo</button>
-    <button class="ghost" onclick="clearAll()">Clear</button>
-    <button class="secondary" onclick="download()">Download JSON</button>
-  </div>
-</div>
-
 <script src="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.js"></script>
-<script>
-/* ===== QUESTIONS (FROM GAME) ===== */
+
+<script type="module">
+/* ================= IMPORTS ================= */
+import * as THREE from "three";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+
+/* ================= QUESTIONS ================= */
 const questions = [
   { q:"HOUSING VIBE?", l:"Activities & Social", r:"Privacy & Quiet", loc:[-80.6482,41.1025] },
   { q:"SOCIAL STYLE?", l:"Meet Students", r:"Keep to Myself", loc:[-80.6485,41.1035] },
@@ -143,9 +111,8 @@ const questions = [
 ];
 
 let qIndex = 0;
-const lights = { type:'FeatureCollection', features:[] };
 
-/* ===== MAP ===== */
+/* ================= MAP ================= */
 mapboxgl.accessToken =
 'pk.eyJ1IjoieXN1LWhybCIsImEiOiJjbWZtcjVkNXUwNTJkMmxvaDZpaTF6b2x2In0.8-4W7BoAy5GmwM2_-L_Jzw';
 
@@ -158,95 +125,99 @@ const map = new mapboxgl.Map({
   bearing:-133.6
 });
 
+/* ================= RAINBOW BUILDINGS (SAFE) ================= */
 map.on('load',()=>{
-  map.loadImage('traffic-light.png',(e,img)=>{
-    if(e) throw e;
-    map.addImage('traffic-light',img,{pixelRatio:2});
-  });
-
-  map.addSource('lights',{type:'geojson',data:lights});
-  map.addLayer({
-    id:'lights-layer',
-    type:'symbol',
-    source:'lights',
-    layout:{
-      'icon-image':'traffic-light',
-      'icon-size':0.45,
-      'icon-anchor':'bottom',
-      'icon-allow-overlap':true
-    },
-    paint:{
-      'icon-color':[
-        'match',['get','signal'],
-        'green','#22c55e',
-        'red','#ef4444',
-        '#ffffff'
-      ]
+  const layers = map.getStyle().layers;
+  layers.forEach(layer=>{
+    if(layer.type === 'fill-extrusion'){
+      map.setPaintProperty(layer.id,'fill-extrusion-color',[
+        'rgba',
+        ['random',['get','name'],0],
+        ['random',['get','name'],1],
+        ['random',['get','name'],2],
+        1
+      ]);
     }
   });
-
-  renderQuestion();
 });
 
-/* ===== CORE ===== */
+/* ================= THREE CUSTOM LAYER ================= */
+const scene = new THREE.Scene();
+const camera = new THREE.Camera();
+const renderer = new THREE.WebGLRenderer({alpha:true});
+renderer.autoClear = false;
+
+const loader = new GLTFLoader();
+
+const customLayer = {
+  id:'three-layer',
+  type:'custom',
+  renderingMode:'3d',
+  onAdd(map,gl){
+    renderer.setSize(map.getCanvas().width,map.getCanvas().height);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    map.getCanvasContainer().appendChild(renderer.domElement);
+
+    scene.add(new THREE.AmbientLight(0xffffff,1.2));
+  },
+  render(gl,matrix){
+    camera.projectionMatrix = new THREE.Matrix4().fromArray(matrix);
+    renderer.resetState();
+    renderer.render(scene,camera);
+    map.triggerRepaint();
+  }
+};
+
+map.on('load',()=>map.addLayer(customLayer));
+
+/* ================= HELPERS ================= */
+function lngLatToVector(lng,lat,height=0){
+  const m = mapboxgl.MercatorCoordinate.fromLngLat({lng,lat},height);
+  return new THREE.Vector3(m.x,m.y,m.z);
+}
+
+function dropTrafficLight([lng,lat],side){
+  loader.load('./california_traffic_signal_median.glb',g=>{
+    const obj = g.scene;
+    obj.scale.setScalar(0.8);
+
+    obj.traverse(m=>{
+      if(m.isMesh){
+        m.material = m.material.clone();
+        m.material.color.set(side==='left'?0x22c55e:0xef4444);
+      }
+    });
+
+    obj.position.copy(lngLatToVector(lng,lat,0));
+    scene.add(obj);
+  });
+}
+
+/* ================= GAME ================= */
 function renderQuestion(){
-  if(!questions[qIndex]){
-    document.getElementById('qText').innerText = 'ALL QUESTIONS PLACED';
+  const q = questions[qIndex];
+  if(!q){
+    qText.innerText='DONE';
     document.querySelector('.answers').style.display='none';
     return;
   }
-  const q = questions[qIndex];
   qText.innerText = q.q;
   aLeft.innerText = q.l;
   aRight.innerText = q.r;
-  map.flyTo({ center:q.loc, speed:0.9, curve:1.2 });
+  map.flyTo({center:q.loc,speed:0.9,curve:1.2});
 }
 
 function choose(side){
   const q = questions[qIndex];
-  const signal = side === 'left' ? 'green' : 'red';
-
-  lights.features.push({
-    type:'Feature',
-    geometry:{ type:'Point', coordinates:q.loc },
-    properties:{
-      qIndex,
-      question:q.q,
-      left:q.l,
-      right:q.r,
-      signal
-    }
-  });
-
-  map.getSource('lights').setData(lights);
+  dropTrafficLight(q.loc,side);
   qIndex++;
   renderQuestion();
 }
 
-function undo(){
-  if(!lights.features.length) return;
-  lights.features.pop();
-  qIndex = Math.max(0,qIndex-1);
-  renderQuestion();
-}
-
-function clearAll(){
-  lights.features.length = 0;
-  qIndex = 0;
-  renderQuestion();
-}
-
-function download(){
-  const blob = new Blob([JSON.stringify(lights,null,2)],{type:'application/geo+json'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'race_traffic_lights.geojson';
-  a.click();
-}
-
-/* ===== EVENTS ===== */
 aLeft.onclick = ()=>choose('left');
 aRight.onclick = ()=>choose('right');
+
+map.on('load',renderQuestion);
 </script>
 
 </body>
